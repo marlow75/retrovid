@@ -53,21 +53,12 @@ public class Compression2 extends Compression {
 				
 		return s;
 	}
-	
-	public static final boolean checkAddress(final int changes[]) {
-		int address = 0;
-		for (int i = 0; i < changes.length; i += 2)
-			address += changes[i] & 0xf;
-				
-		return address != 999;
-	}
-
-	public static int[] packNibble(final int[] nibble) {
-		final int result[] = new int[nibble.length / 2];
-		
-		for (int i = 0, j = 0; i < nibble.length; i += 2, j++)
-			result[j] = (nibble[i] & 0xf) | ((nibble[i + 1] & 0xf) << 4);
-		
-		return result;
-	}
+//	
+//	public static final boolean checkAddress(final int changes[]) {
+//		int address = 0;
+//		for (int i = 0; i < changes.length; i += 2)
+//			address += changes[i] & 0xf;
+//				
+//		return address != 999;
+//	}
 }

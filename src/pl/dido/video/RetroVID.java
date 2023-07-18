@@ -3,6 +3,7 @@ package pl.dido.video;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
@@ -38,7 +39,6 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
 import pl.dido.image.petscii.PetsciiRenderer;
-import pl.dido.image.utils.Config;
 import pl.dido.image.utils.Gfx;
 import pl.dido.image.utils.Utils;
 import pl.dido.video.compression.Compression2;
@@ -63,6 +63,8 @@ public class RetroVID {
 
 	protected int frameRate;
 	protected final Java2DFrameConverter conv = new Java2DFrameConverter();
+
+	protected String default_path;
 
 	public static void main(final String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -115,13 +117,23 @@ public class RetroVID {
 
 		PetsciiVideoTab.btnPlay.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				playFragment(20); // 20 seconds
+				try {
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					playFragment(20); // 20 seconds
+				} finally {
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				}
 			}
 		});
 
 		PetsciiVideoTab.btnRecord.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				convertFragment(); // as much frames as can be
+			public void actionPerformed(final ActionEvent e) {				
+				try {
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					convertFragment(); // as much frames as can be
+				} finally {
+					frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+				}
 			}
 		});
 
@@ -131,7 +143,7 @@ public class RetroVID {
 		btnLoad.setPreferredSize(new Dimension(143, 34));
 		btnLoad.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				final JFileChooser fc = new JFileChooser(Config.default_path);
+				final JFileChooser fc = new JFileChooser(default_path);
 				final FileFilter filter = new FileNameExtensionFilter("Choose movie", "mp4");
 
 				fc.setFileFilter(filter);
@@ -149,7 +161,7 @@ public class RetroVID {
 						grabber = new FFmpegFrameGrabber(selectedFile);
 						grabber.start();
 
-						Config.default_path = selectedFile.getAbsolutePath();
+						default_path = selectedFile.getAbsolutePath();
 						frameRate = (int) grabber.getFrameRate();
 
 						final int end = grabber.getLengthInFrames() / frameRate;
