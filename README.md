@@ -4,6 +4,8 @@ You can make a short clip for your retro computer. Just open your favorite movie
 
 For now only PETSCII C64 is supported.
 
+![PetsciiVID](retrovid.png)
+
 Compression mode
 
 - Code and color - all changes are recorded, screen codes and colors
