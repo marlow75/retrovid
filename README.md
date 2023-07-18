@@ -23,3 +23,5 @@ Contrast processing
 - CLAHE - clipped adaptive histogram equalizer (local) with sharpen level 
 
 Requirements: please install video library for JAVA, [javacv](https://sourceforge.net/projects/javacv.mirror/)
+
+All javacv libraries must be put next to retrovid.jar file in directory named retrovid_lib.
