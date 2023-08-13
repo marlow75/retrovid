@@ -34,6 +34,7 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
+import pl.dido.image.AboutGui;
 import pl.dido.image.petscii.PetsciiRenderer;
 import pl.dido.image.utils.Gfx;
 import pl.dido.image.utils.Utils;
@@ -82,6 +83,7 @@ public class RetroVID implements ActionListener, PropertyChangeListener {
 
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		tabbedPane.addTab("PETSCII", null, PetsciiVideoTab.petsciiTab(petsciiVideoConfig), null);
+		tabbedPane.addTab("About", null, AboutGui.aboutTab(), null);
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent changeEvent) {
