@@ -7,6 +7,7 @@ import java.awt.SystemColor;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSlider;
 
 import pl.dido.video.utils.GuiUtils;
@@ -19,6 +20,8 @@ public class PetsciiVideoTab extends PetsciiGui {
 	
 	public static Button btnPlay;
 	public static Button btnRecord;
+	
+	public static JProgressBar progressBar;
 
 	public static JPanel petsciiTab(final PetsciiVideoConfig config) {
 		final JPanel petscii = PetsciiGui.petsciiTab(config);

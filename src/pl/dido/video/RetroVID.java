@@ -3,7 +3,6 @@ package pl.dido.video;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
@@ -11,13 +10,10 @@ import java.awt.SystemColor;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Hashtable;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -28,12 +24,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
+import javax.swing.ProgressMonitor;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.bytedeco.javacpp.tools.Logger;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
@@ -41,38 +37,29 @@ import org.bytedeco.javacv.Java2DFrameConverter;
 import pl.dido.image.petscii.PetsciiRenderer;
 import pl.dido.image.utils.Gfx;
 import pl.dido.image.utils.Utils;
-import pl.dido.video.compression.Compression2;
-import pl.dido.video.compression.Compression3;
+import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
 import pl.dido.video.petscii.PetsciiVideoTab;
-import pl.dido.video.utils.MarkableByteArrayOutputStream;
-import pl.dido.video.utils.VideoUtils;
 
-public class RetroVID {
-	private static final Logger log = Logger.create(RetroVID.class);
-	private static String BAD_COMPRESSION = "Bad compression !!!";
-
+public class RetroVID implements ActionListener, PropertyChangeListener {
 	private final static int FRAMES_PER_SECOND = 10;
-	private int skip;
 
-	protected JFrame frame;
 	protected final PetsciiVideoConfig petsciiVideoConfig = new PetsciiVideoConfig();
-
-	protected File selectedFile;
 	protected FFmpegFrameGrabber grabber;
 
-	protected int frameRate;
-	protected final Java2DFrameConverter conv = new Java2DFrameConverter();
-
 	protected String default_path;
+	protected PetsciiGrabberTask task;
+
+	protected ProgressMonitor progressMonitor;
+	protected JFrame frame;
 
 	public static void main(final String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					final RetroVID video = new RetroVID();
-					video.frame.setVisible(true);
-					video.frame.setLocationRelativeTo(null);
+					final RetroVID app = new RetroVID();
+					app.frame.setVisible(true);
+					app.frame.setLocationRelativeTo(null);
 				} catch (final Exception e) {
 					e.printStackTrace();
 				}
@@ -100,6 +87,7 @@ public class RetroVID {
 			public void stateChanged(final ChangeEvent changeEvent) {
 				final JTabbedPane sourceTabbedPane = (JTabbedPane) changeEvent.getSource();
 				final int index = sourceTabbedPane.getSelectedIndex();
+				
 				btnLoad.setVisible(!"About".equals(tabbedPane.getTitleAt(index)));
 			}
 		});
@@ -109,7 +97,7 @@ public class RetroVID {
 				final JSlider source = (JSlider) e.getSource();
 
 				if (!source.getValueIsAdjusting())
-					petsciiVideoConfig.startFrame = source.getValue();
+					petsciiVideoConfig.startFrame = source.getValue() * petsciiVideoConfig.frameRate;
 
 				displaySingleFrame();
 			}
@@ -117,30 +105,17 @@ public class RetroVID {
 
 		PetsciiVideoTab.btnPlay.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				try {
-					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-					playFragment(20); // 20 seconds
-				} finally {
-					frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-				}
+				playFragment(20); // 20 seconds
 			}
 		});
 
-		PetsciiVideoTab.btnRecord.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {				
-				try {
-					frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-					convertFragment(); // as much frames as can be
-				} finally {
-					frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-				}
-			}
-		});
+		PetsciiVideoTab.btnRecord.addActionListener(this);
 
 		btnLoad.setBackground(new Color(0, 128, 128));
 		btnLoad.setFont(new Font("Dialog", Font.BOLD, 12));
 		btnLoad.setForeground(new Color(255, 255, 255));
 		btnLoad.setPreferredSize(new Dimension(143, 34));
+
 		btnLoad.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
 				final JFileChooser fc = new JFileChooser(default_path);
@@ -156,15 +131,14 @@ public class RetroVID {
 							grabber.close();
 						}
 
-						selectedFile = fc.getSelectedFile();
-
-						grabber = new FFmpegFrameGrabber(selectedFile);
+						petsciiVideoConfig.selectedFile = fc.getSelectedFile();
+						grabber = new FFmpegFrameGrabber(petsciiVideoConfig.selectedFile);
 						grabber.start();
 
-						default_path = selectedFile.getAbsolutePath();
-						frameRate = (int) grabber.getFrameRate();
+						default_path = petsciiVideoConfig.selectedFile.getAbsolutePath();
+						petsciiVideoConfig.frameRate = (int) grabber.getFrameRate();
 
-						final int end = grabber.getLengthInFrames() / frameRate;
+						final int end = grabber.getLengthInFrames() / petsciiVideoConfig.frameRate;
 						final int mid = end / 2;
 
 						final Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
@@ -172,11 +146,10 @@ public class RetroVID {
 						labelTable.put(mid, new JLabel(Integer.toString(mid) + "s"));
 						labelTable.put(end, new JLabel(Integer.toString(end) + "s"));
 
-						skip = frameRate / FRAMES_PER_SECOND;
-
+						petsciiVideoConfig.skip = petsciiVideoConfig.frameRate / FRAMES_PER_SECOND;
 						petsciiVideoConfig.startFrame = 0;
-						PetsciiVideoTab.sldFrame.setValue(0);
 
+						PetsciiVideoTab.sldFrame.setValue(0);
 						PetsciiVideoTab.sldFrame.setEnabled(true);
 						PetsciiVideoTab.sldFrame.setMaximum(end);
 						PetsciiVideoTab.sldFrame.setLabelTable(labelTable);
@@ -186,7 +159,7 @@ public class RetroVID {
 
 						displaySingleFrame();
 					} catch (final Exception ex) {
-						// TODO:
+						// TODO: Nothing
 					}
 				}
 			}
@@ -214,10 +187,21 @@ public class RetroVID {
 		});
 	}
 
+	public void actionPerformed(final ActionEvent event) {
+		converterButtons(false);
+
+		progressMonitor = new ProgressMonitor(this.frame, "Converting", "", 0, 100);
+		progressMonitor.setProgress(0);
+		
+		task = new PetsciiGrabberTask(petsciiVideoConfig);
+		task.addPropertyChangeListener(this);
+		task.execute();
+	}
+
 	private void displaySingleFrame() {
-		if (selectedFile != null)
+		if (petsciiVideoConfig.selectedFile != null)
 			try {
-				grabber.setFrameNumber(petsciiVideoConfig.startFrame * frameRate);
+				grabber.setFrameNumber(petsciiVideoConfig.startFrame);
 				frame2petscii(new PetsciiRenderer(petsciiVideoConfig), false);
 			} catch (final Exception ex) {
 				JOptionPane.showMessageDialog(null, "ERROR", "Can't display single fragment !!!",
@@ -226,23 +210,28 @@ public class RetroVID {
 	}
 
 	private void playFragment(final float time) {
-		final int start = petsciiVideoConfig.startFrame * frameRate;
-		int end = (int) (start + time * frameRate);
-
-		end = end > grabber.getLengthInFrames() ? grabber.getLengthInFrames() : end;
-		final PetsciiRenderer petscii = new PetsciiRenderer(petsciiVideoConfig);
 		try {
-			grabber.setFrameNumber(start);
+			converterButtons(false);
+			final int start = petsciiVideoConfig.startFrame;
+			int end = (int) (start + time * petsciiVideoConfig.frameRate);
 
+			end = end > grabber.getLengthInFrames() ? grabber.getLengthInFrames() : end;
+			final PetsciiRenderer petscii = new PetsciiRenderer(petsciiVideoConfig);
+
+			grabber.setFrameNumber(start);
 			for (int i = start; i < end; i++)
-				frame2petscii(petscii, i % 2 == 0); // slide show
+				frame2petscii(petscii, i % 3 == 0); // slide show
+
 		} catch (final Exception ex) {
 			JOptionPane.showMessageDialog(null, "ERROR", "Can't play fragment !!!", JOptionPane.ERROR_MESSAGE);
+		} finally {
+			converterButtons(true);
 		}
 	}
 
-	private void convertFragment() {
-		convert2petscii(selectedFile, petsciiVideoConfig.startFrame * frameRate, skip);
+	private void converterButtons(final boolean p) {
+		PetsciiVideoTab.btnPlay.setEnabled(p);
+		PetsciiVideoTab.btnRecord.setEnabled(p);
 	}
 
 	private Frame getFrame() {
@@ -263,143 +252,51 @@ public class RetroVID {
 
 		return frame;
 	}
-
+	
 	private void frame2petscii(final PetsciiRenderer petscii, final boolean skip) {
 		Frame frame = getFrame();
-		if (skip)
-			return;
+		if (!skip)
+			try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
 
-		petscii.setImage(Gfx.scaleWithStretching(conv.convert(frame), 320, 200));
-		petscii.imageProcess();
+				petscii.setImage(Gfx.scaleWithStretching(conv.convert(frame), 320, 200));
+				petscii.imageProcess();
 
-		PetsciiVideoTab.movie.setImage(petscii.getImage());
-		PetsciiVideoTab.movie.showImage();
+				PetsciiVideoTab.movie.setImage(petscii.getImage());
+				PetsciiVideoTab.movie.showImage();
+			}
 
 		frame.close();
 	}
 
-	public void convert2petscii(final File selectedFile, final int frameNumber, final int skip) {
-		try (final FFmpegFrameGrabber frameGrabber = new FFmpegFrameGrabber(selectedFile)) {
-			int frames = 0;
+	@Override
+	public void propertyChange(final PropertyChangeEvent evt) {
+		if ("progress" == evt.getPropertyName()) {
+			final int progress = (Integer) evt.getNewValue();
+			progressMonitor.setProgress(progress);
 
-			final String dir = selectedFile.getParent() + File.separator + "PICS";
-			Utils.createDirectory(dir);
-
-			frameGrabber.start();
-			frameGrabber.setFrameNumber(frameNumber);
-
-			Frame frame = frameGrabber.grabFrame();
-
-			final PetsciiRenderer petscii = new PetsciiRenderer(petsciiVideoConfig);
-			final MarkableByteArrayOutputStream out = new MarkableByteArrayOutputStream(64 * 1024);
-
-			boolean first = true;
-			int oldScreen[] = null, oldNibble[] = null;
-
-			try {
-				int i = 0, j = 0, sum = 0, headerSize = 0, lastFrameSize = 0;
-
-				while (true) {
-					if (frame.image != null) {
-						if (i % skip == 0) {
-							petscii.setImage(conv.convert(frame));
-							petscii.imageProcess();
-
-							if (first) {
-								headerSize = VideoUtils.saveHeader(out, petscii.backgroundColor, petscii.screen,
-										Compression2.packNibble(petscii.nibble));
-
-								first = false;
-								sum += headerSize;
-							} else {
-								int compressedScreen[] = null;
-								int p[] = null;
-
-								switch (petsciiVideoConfig.compression) {
-								case CODES:
-									compressedScreen = Compression2.compress(oldScreen, petscii.screen, petscii.nibble);
-
-									if (Compression2.checkAddress(compressedScreen)) {
-										JOptionPane.showMessageDialog(null, "ERROR", BAD_COMPRESSION,
-												JOptionPane.ERROR_MESSAGE);
-										break;
-									}
-
-									// check & verify compression
-									p = Compression2.decompress(oldScreen, oldNibble, compressedScreen);
-									for (int k = 0; k < 1000; k++)
-										if (p[k] != petscii.screen[k]) {
-											JOptionPane.showMessageDialog(null, "ERROR", BAD_COMPRESSION,
-													JOptionPane.ERROR_MESSAGE);
-											break;
-										}
-									break;
-								case CODES_COLOR:
-									compressedScreen = Compression3.compress(oldScreen, petscii.screen, oldNibble,
-											petscii.nibble);
-
-									if (Compression3.checkAddress(compressedScreen)) {
-										JOptionPane.showMessageDialog(null, "ERROR", BAD_COMPRESSION,
-												JOptionPane.ERROR_MESSAGE);
-										break;
-									}
-
-									// check & verify compression
-									p = Compression3.decompress(oldScreen, oldNibble, compressedScreen);
-									for (int k = 0; k < 1000; k++)
-										if (p[k] != petscii.screen[k]) {
-											JOptionPane.showMessageDialog(null, "ERROR", BAD_COMPRESSION,
-													JOptionPane.ERROR_MESSAGE);
-											break;
-										}
-								}
-
-								lastFrameSize = VideoUtils.saveScreen(out, petscii.backgroundColor, compressedScreen);
-								sum += lastFrameSize;
-
-								frames++;
-							}
-
-							oldScreen = petscii.screen.clone();
-							oldNibble = petscii.nibble.clone();
-
-							ImageIO.write(petscii.getImage(), "jpg",
-									new File(dir + File.separatorChar + String.format("%2d", j++) + ".jpg"));
-
-							if (sum > 0xc7fe) { // max C64 file size
-								out.rollback(lastFrameSize);
-
-								log.debug("Grabbed: " + --frames + " frames");
-								break;
-							}
-						}
-
-						i += 1;
-					}
-
-					frame = frameGrabber.grabImage();
-				}
-
-				out.setByteAtMarkedPosition((byte) frames);
-
-				frameGrabber.stop();
-				frameGrabber.close();
-			} catch (final Exception e) {
-				e.printStackTrace();
+			if (progressMonitor.isCanceled()) {
+				task.cancel(true);
+				converterButtons(true);
+				
+				return;
 			}
+			
+			if (task.isDone()) {
+				try {
+					final Integer result = task.get();
 
-			out.flush();
-			out.close();
-
-			final String fileName = dir + File.separator + selectedFile.getName().substring(0, 7) + "F"
-					+ petsciiVideoConfig.startFrame + ".prg";
-			final BufferedOutputStream fs = new BufferedOutputStream(new FileOutputStream(new File(fileName)), 8192);
-
-			fs.write(out.toByteArray());
-			fs.close();
-		} catch (final IOException e) {
-			JOptionPane.showMessageDialog(null, "ERROR", "IOError !!!", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+					if (result == PetsciiGrabberTask.ERROR) 	
+						JOptionPane.showMessageDialog(null, "ERROR", "Unexpected error !!!", JOptionPane.ERROR_MESSAGE);
+					else
+					if (result == PetsciiGrabberTask.IO_ERROR) 	
+						JOptionPane.showMessageDialog(null, "ERROR", "IO error !!!", JOptionPane.ERROR_MESSAGE);
+					
+				} catch (final Exception e) {
+					e.printStackTrace();
+				} finally {
+					this.converterButtons(true);
+				}
+			}
 		}
 	}
 }
