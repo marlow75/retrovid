@@ -1,6 +1,6 @@
 # Simple Video Converter for retro machines
 
-You can make a short clip for your retro computer. Just open your favorite movie, select scene and grab it. Thats all.
+Now you can make a short clip for your retro computer. Just open your favorite movie, select scene and grab it. Thats all.
 
 For now only PETSCII C64 is supported.
 
@@ -9,6 +9,11 @@ All javacv libraries must be put next to retrovid.jar file in directory named re
 
 ![PetsciiVID](retrovid.png)
 
+Medium
+
+- PRG - C64 progra, simply type RUN command in BASIC
+- CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minuts long
+ 
 Compression mode
 
 - Code and color - all changes are recorded, screen codes and colors
@@ -16,8 +21,8 @@ Compression mode
 
 Converter mode
 
-- One hidden layer - one layer neural network, prefers semigraphics
-- Two hidden layers - two layers neural network, prefers characters
+- Smigraphics - prefers semigraphics
+- Characters - prefers characters
 
 Contrast processing
 
