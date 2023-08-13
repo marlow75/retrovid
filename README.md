@@ -11,7 +11,7 @@ All javacv libraries must be put next to retrovid.jar file in directory named li
 
 Medium
 
-- PRG - C64 progra, simply type RUN command in BASIC
+- PRG - C64 program, simply type RUN command in BASIC
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minuts long
  
 Compression mode
@@ -21,7 +21,7 @@ Compression mode
 
 Converter mode
 
-- Smigraphics - prefers semigraphics
+- Semigraphics - prefers semigraphics
 - Characters - prefers characters
 
 Contrast processing
