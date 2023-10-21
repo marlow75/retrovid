@@ -8,83 +8,51 @@ import org.bytedeco.javacv.Frame.Type;
 
 public class RetroDigit {
 	
-	private static short lowPass(short p, short o) {
-		short delta = (short) (p - o);
-		if (delta < 0)
-			return (short) (o + (delta <= -2 ? -2 : delta));
-		else
-			return (short) (o + (delta >= 2 ? 2 : delta));
-	}
-	
-	private static short lowPass2(short p, short o) {
-		return (short) ((p + o * 3) / 4);
-	}
-	
-	private static short highPass(short p, short o) {
-		short delta = (short) (p - o);
-		if (delta < 0)
-			return (short) (o + (delta >= -6 ? -6 : delta));
-		else
-			return (short) (o + (delta <= 6 ? 6 : delta));
-	}
-
 	public static void main(final String args[]) throws Exception {
-		try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(
-				"C:\\Users\\dydorafa\\Documents\\commando-don-t-disturb-my-friend.he-s-dead.mp4")) {
-				//"C:\\Users\\dydorafa\\Documents\\aha_Trim.mp4")) {
-
+		try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber("c:/temp/commando.mp4")) {
 			grabber.start();
 
 			boolean stopped = false;
-			boolean first = true;
-
+				
 			int position = 0;
+			int bytes = 0;
 			
-			int avg = 0;
 			boolean hi = false;
-			
 			short data = 0;
-			short oldSample = 0;
+			int line = 0;
 
 			while (!Thread.interrupted() && !stopped) {
 				Frame frame = grabber.grab();
 
 				if (frame == null)
-					break;			
+					break;
 
 				if (frame.type == Type.AUDIO) {
 					final ShortBuffer buf = (ShortBuffer) frame.samples[0];
 					buf.rewind();
-
-					int line = 0;
+					float avg = 0, sample = 0;
+					
 					while (buf.position() < buf.capacity()) {
 						// two channels skip right
-						short sample = (short) ((buf.get() + buf.get()) / 2);
+						sample = (((buf.get() + buf.get()) / 2) & 0xffff);
+						//avg = ((sample + 2 * avg) / 3); // sample low pass filter
+						avg = sample * 0.1f + 0.9f * avg;
 						
-						if (first && sample == 0)
-							continue;
-
-						first = false;
-						avg += sample;
-						
-						if (position++ % 8 == 7) { // every 8 bytes 44,1 kHz / 8 = 5,5 kHz
-							sample = (short) (avg / 8);
-							
-							avg = 0;
+						if (position++ % 10 == 9) { // every 8 bytes 44,1 kHz / 8 = 5,5 kHz or 10 bytes = 4,4 kHz
+							//sample = (short) ((avg & 0xf000) >> 12);
+							sample = Math.round(avg * 0.000228882 + Math.random());
+							sample = sample > 15 ? 15: sample;
 							
 							if (hi) {
-								short p = lowPass2((short)((sample & 0xf000) >> 12), oldSample);
-								data |= p << 4;
-								oldSample = p;
-
+								data |= ((short) sample) << 4;
+								
 								hi = false;
 								line = line % 16;
 
 								String val = Integer.toHexString(Short.toUnsignedInt(data));
-
 								switch (line) {
 								case 0:
-									System.out.print("byte $" + val);
+									System.out.print("\tbyte $" + val);
 									break;
 								case 15:
 									System.out.println(",$" + val);
@@ -94,11 +62,9 @@ public class RetroDigit {
 								}
 
 								line++;
+								bytes++;
 							} else {
-								short p = lowPass2((short)((sample & 0xf000) >> 12), oldSample);
-								data = p;
-								oldSample = p;
-
+								data = (short) sample;
 								hi = true;
 							}
 						}
@@ -108,104 +74,17 @@ public class RetroDigit {
 							break;
 						}
 					}
-
-					if (!first && line != 15)
-						System.out.println();
 				}
 			}
 
+			System.out.println("\n\rbytes: " + bytes);
+			
 			grabber.stop();
 			grabber.release();
 
 		} catch (final Exception exception) {
+			System.out.println(exception.getLocalizedMessage());
 			System.exit(1);
 		}
 	}
-	
-//	public static void main(final String args[]) throws Exception {
-//		try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(
-//				"C:\\Users\\dydorafa\\Documents\\commando-don-t-disturb-my-friend.he-s-dead.mp4")) {
-//				//"C:\\Users\\dydorafa\\Documents\\aha_Trim.mp4")) {
-//
-//			grabber.start();
-//
-//			boolean stopped = false;
-//			boolean first = true;
-//
-//			int position = 0;
-//			short data = 0;
-//			
-//			int avg = 0;
-//			boolean hi = false;
-//
-//			while (!Thread.interrupted() && !stopped) {
-//				Frame frame = grabber.grab();
-//
-//				if (frame == null) {
-//					break;
-//				}
-//
-//				if (frame.type == Type.AUDIO) {
-//					final ShortBuffer buf = (ShortBuffer) frame.samples[0];
-//					buf.rewind();
-//
-//					int line = 0;
-//					while (buf.position() < buf.capacity()) {
-//						// two channels skip right
-//						short sample = (short) ((buf.get() + buf.get()) / 2);
-//						
-//						if (first && sample == 0)
-//							continue;
-//
-//						first = false;
-//						avg += sample;
-//						
-//						if (position++ % 8 == 7) { // every 8 bytes 44,1 kHz / 8 = 5,5 kHz
-//							sample = (short) (avg / 8);
-//							avg = 0;
-//							
-//							if (hi) {
-//								data |= (sample & 0xf000) >> 8;
-//
-//								hi = false;
-//								line = line % 16;
-//
-//								String val = Integer.toHexString(Short.toUnsignedInt(data));
-//
-//								switch (line) {
-//								case 0:
-//									System.out.print("byte $" + val);
-//									break;
-//								case 15:
-//									System.out.println(",$" + val);
-//									break;
-//								default:
-//									System.out.print(",$" + val);
-//								}
-//
-//								line++;
-//							} else {
-//								data = (short) ((sample & 0xf000) >> 12);
-//								hi = true;
-//							}
-//						}
-//
-//						if (position > 36 * 1024 * 16) {
-//							stopped = true;
-//							break;
-//						}
-//					}
-//
-//					if (!first && line != 15)
-//						System.out.println();
-//				}
-//			}
-//
-//			grabber.stop();
-//			grabber.release();
-//
-//		} catch (final Exception exception) {
-//			System.exit(1);
-//		}
-//	}
 }

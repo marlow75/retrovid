@@ -80,7 +80,7 @@ public class GuiUtils {
 
 		rdbtnHEButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				config.highContrast = Config.HIGH_CONTRAST.HE;			
+				config.highContrast = Config.HIGH_CONTRAST.HE;
 				sldBrightness.setEnabled(false);
 			}
 		});

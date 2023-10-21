@@ -10,8 +10,6 @@ import java.awt.SystemColor;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
@@ -20,39 +18,31 @@ import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
-import javax.swing.ProgressMonitor;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.Java2DFrameConverter;
 
-import pl.dido.image.AboutGui;
-import pl.dido.image.petscii.PetsciiRenderer;
-import pl.dido.image.utils.Gfx;
 import pl.dido.image.utils.Utils;
+import pl.dido.video.charset.CharsetVideoGui;
 import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
-import pl.dido.video.petscii.PetsciiVideoTab;
+import pl.dido.video.petscii.PetsciiVideoGui;
+import pl.dido.video.utils.VideoGui;
+import pl.dido.video.utils.VideoPanel;
 
-public class RetroVID implements ActionListener, PropertyChangeListener {
-	private final static int FRAMES_PER_SECOND = 10;
-
-	protected final PetsciiVideoConfig petsciiVideoConfig = new PetsciiVideoConfig();
-	protected FFmpegFrameGrabber grabber;
-
+public class RetroVID {
 	protected String default_path;
 	protected PetsciiGrabberTask task;
 
-	protected ProgressMonitor progressMonitor;
 	protected JFrame frame;
+	
+	protected int currentTabIndex = 0;
+	protected VideoPanel tabs[];
 
 	public static void main(final String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -67,51 +57,38 @@ public class RetroVID implements ActionListener, PropertyChangeListener {
 			}
 		});
 	}
-
+	
 	public RetroVID() {
 		frame = new JFrame("RetroVID");
 		frame.setIconImage(Toolkit.getDefaultToolkit().getImage(Utils.getResourceAsURL("retro.png")));
+		
 		frame.setResizable(false);
 		frame.setBounds(0, 0, 670, 450);
+		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout());
 
 		final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setFont(new Font("Tahoma", Font.PLAIN, 12));
-
+		tabs = new VideoPanel[3];
+		
 		final Button btnLoad = new Button("Load file...");
-
+		tabs[0] = new PetsciiVideoGui(frame);
+		tabs[1] = new CharsetVideoGui(frame);
+		tabs[2] = new AboutVideoGui();
+		
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
-		tabbedPane.addTab("PETSCII", null, PetsciiVideoTab.petsciiTab(petsciiVideoConfig), null);
-		tabbedPane.addTab("About", null, AboutGui.aboutTab(), null);
+		tabbedPane.addTab("C64 PETSCII", null, tabs[0].getTab(), null);
+		tabbedPane.addTab("Super CPU CHARSET", null, tabs[1].getTab(), null);
+		tabbedPane.addTab("About", null, tabs[2].getTab(), null);
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent changeEvent) {
 				final JTabbedPane sourceTabbedPane = (JTabbedPane) changeEvent.getSource();
-				final int index = sourceTabbedPane.getSelectedIndex();
-				
-				btnLoad.setVisible(!"About".equals(tabbedPane.getTitleAt(index)));
+				currentTabIndex = sourceTabbedPane.getSelectedIndex();
+				btnLoad.setVisible(!"About".equals(tabbedPane.getTitleAt(currentTabIndex)));
 			}
 		});
-
-		PetsciiVideoTab.sldFrame.addChangeListener(new ChangeListener() {
-			public void stateChanged(final ChangeEvent e) {
-				final JSlider source = (JSlider) e.getSource();
-
-				if (!source.getValueIsAdjusting())
-					petsciiVideoConfig.startFrame = source.getValue() * petsciiVideoConfig.frameRate;
-
-				displaySingleFrame();
-			}
-		});
-
-		PetsciiVideoTab.btnPlay.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				playFragment(20); // 20 seconds
-			}
-		});
-
-		PetsciiVideoTab.btnRecord.addActionListener(this);
 
 		btnLoad.setBackground(new Color(0, 128, 128));
 		btnLoad.setFont(new Font("Dialog", Font.BOLD, 12));
@@ -127,20 +104,18 @@ public class RetroVID implements ActionListener, PropertyChangeListener {
 				final int returnVal = fc.showOpenDialog(frame);
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					try {
-						if (grabber != null) {
-							grabber.stop();
-							grabber.close();
-						}
+					final VideoGui tab = (VideoGui) tabs[currentTabIndex];
+					final PetsciiVideoConfig config = (PetsciiVideoConfig) tab.getConfig();
+					
+					config.selectedFile = fc.getSelectedFile();
 
-						petsciiVideoConfig.selectedFile = fc.getSelectedFile();
-						grabber = new FFmpegFrameGrabber(petsciiVideoConfig.selectedFile);
+					try (final FFmpegFrameGrabber grabber = tab.getNewGrabber()) {
 						grabber.start();
 
-						default_path = petsciiVideoConfig.selectedFile.getAbsolutePath();
-						petsciiVideoConfig.frameRate = (int) grabber.getFrameRate();
+						default_path = config.selectedFile.getAbsolutePath();
+						config.frameRate = (int) grabber.getFrameRate();
 
-						final int end = grabber.getLengthInFrames() / petsciiVideoConfig.frameRate;
+						final int end = grabber.getLengthInFrames() / config.frameRate;
 						final int mid = end / 2;
 
 						final Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
@@ -148,20 +123,15 @@ public class RetroVID implements ActionListener, PropertyChangeListener {
 						labelTable.put(mid, new JLabel(Integer.toString(mid) + "s"));
 						labelTable.put(end, new JLabel(Integer.toString(end) + "s"));
 
-						petsciiVideoConfig.skip = petsciiVideoConfig.frameRate / FRAMES_PER_SECOND;
-						petsciiVideoConfig.startFrame = 0;
+						config.startFrame = 0;
 
-						PetsciiVideoTab.sldFrame.setValue(0);
-						PetsciiVideoTab.sldFrame.setEnabled(true);
-						PetsciiVideoTab.sldFrame.setMaximum(end);
-						PetsciiVideoTab.sldFrame.setLabelTable(labelTable);
+						tab.setSlider(end, labelTable);
+						tab.enablePlay(true);
+						tab.enableRecord(true);
 
-						PetsciiVideoTab.btnPlay.setEnabled(true);
-						PetsciiVideoTab.btnRecord.setEnabled(true);
-
-						displaySingleFrame();
+						tab.displaySingleFrame();
 					} catch (final Exception ex) {
-						// TODO: Nothing
+						ex.printStackTrace();
 					}
 				}
 			}
@@ -187,118 +157,5 @@ public class RetroVID implements ActionListener, PropertyChangeListener {
 				System.exit(0);
 			}
 		});
-	}
-
-	public void actionPerformed(final ActionEvent event) {
-		converterButtons(false);
-
-		progressMonitor = new ProgressMonitor(this.frame, "Converting", "", 0, 100);
-		progressMonitor.setProgress(0);
-		
-		task = new PetsciiGrabberTask(petsciiVideoConfig);
-		task.addPropertyChangeListener(this);
-		task.execute();
-	}
-
-	private void displaySingleFrame() {
-		if (petsciiVideoConfig.selectedFile != null)
-			try {
-				grabber.setFrameNumber(petsciiVideoConfig.startFrame);
-				frame2petscii(new PetsciiRenderer(petsciiVideoConfig), false);
-			} catch (final Exception ex) {
-				JOptionPane.showMessageDialog(null, "ERROR", "Can't display single fragment !!!",
-						JOptionPane.ERROR_MESSAGE);
-			}
-	}
-
-	private void playFragment(final float time) {
-		try {
-			converterButtons(false);
-			final int start = petsciiVideoConfig.startFrame;
-			int end = (int) (start + time * petsciiVideoConfig.frameRate);
-
-			end = end > grabber.getLengthInFrames() ? grabber.getLengthInFrames() : end;
-			final PetsciiRenderer petscii = new PetsciiRenderer(petsciiVideoConfig);
-
-			grabber.setFrameNumber(start);
-			for (int i = start; i < end; i++)
-				frame2petscii(petscii, i % 3 == 0); // slide show
-
-		} catch (final Exception ex) {
-			JOptionPane.showMessageDialog(null, "ERROR", "Can't play fragment !!!", JOptionPane.ERROR_MESSAGE);
-		} finally {
-			converterButtons(true);
-		}
-	}
-
-	private void converterButtons(final boolean p) {
-		PetsciiVideoTab.btnPlay.setEnabled(p);
-		PetsciiVideoTab.btnRecord.setEnabled(p);
-	}
-
-	private Frame getFrame() {
-		Frame frame = null;
-
-		try {
-			frame = grabber.grabFrame();
-			if (frame == null)
-				return null;
-
-			while (frame.image == null) {
-				frame.close();
-				frame = grabber.grabFrame();
-			}
-		} catch (final Exception e) {
-			return null;
-		}
-
-		return frame;
-	}
-	
-	private void frame2petscii(final PetsciiRenderer petscii, final boolean skip) {
-		Frame frame = getFrame();
-		if (!skip)
-			try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
-
-				petscii.setImage(Gfx.scaleWithStretching(conv.convert(frame), 320, 200));
-				petscii.imageProcess();
-
-				PetsciiVideoTab.movie.setImage(petscii.getImage());
-				PetsciiVideoTab.movie.showImage();
-			}
-
-		frame.close();
-	}
-
-	@Override
-	public void propertyChange(final PropertyChangeEvent evt) {
-		if ("progress" == evt.getPropertyName()) {
-			final int progress = (Integer) evt.getNewValue();
-			progressMonitor.setProgress(progress);
-
-			if (progressMonitor.isCanceled()) {
-				task.cancel(true);
-				converterButtons(true);
-				
-				return;
-			}
-			
-			if (task.isDone()) {
-				try {
-					final Integer result = task.get();
-
-					if (result == PetsciiGrabberTask.ERROR) 	
-						JOptionPane.showMessageDialog(null, "ERROR", "Unexpected error !!!", JOptionPane.ERROR_MESSAGE);
-					else
-					if (result == PetsciiGrabberTask.IO_ERROR) 	
-						JOptionPane.showMessageDialog(null, "ERROR", "IO error !!!", JOptionPane.ERROR_MESSAGE);
-					
-				} catch (final Exception e) {
-					e.printStackTrace();
-				} finally {
-					this.converterButtons(true);
-				}
-			}
-		}
 	}
 }
