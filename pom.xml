@@ -11,7 +11,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.8.1</version>
             <configuration>
-               <release>16</release>
+               <release>11</release>
             </configuration>
          </plugin>
          <plugin>
@@ -72,6 +72,11 @@
          <artifactId>javacpp-platform</artifactId>
          <version>1.5.9</version>
       </dependency>
+	  <dependency>
+    	 <groupId>org.openjfx</groupId>
+    	 <artifactId>javafx-base</artifactId>
+         <version>18</version>
+	  </dependency>
       <dependency>
          <groupId>pl.dido</groupId>
          <artifactId>RetroPIC</artifactId>
