@@ -44,7 +44,7 @@ Contrast processing
 
 ![Super CPU Charset](retrovid.png)
 
-New method with neural net learns new charset definition. Movie key frames are divided into 8x8 blocks which feads net. Smmoother pictures but takes some time. You can try to run cartridges on C64, some movies, with slow action will work nicely. 
+New method with neural net learns new charset definition. Movie key frames are divided into 8x8 blocks which feads net. Smoother pictures but takes some time. You can try to run cartridges on C64, some movies, with slow action will work nicely. 
 
 Medium
 
