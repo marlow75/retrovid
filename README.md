@@ -1,6 +1,6 @@
 # Simple Video Converter for retro machines
 
-Now you can make a short clip for your retro computer. Just open your favorite movie, select scene and grab it. Thats all.
+Now you can make a short clip for your retro computer. Just open your favorite movie, select scene (slider, preview button) and grab it (grab button). Thats all.
 
 C64 PETSCII and CHARSET Super CPU supported.
 
@@ -12,9 +12,7 @@ Installation:
 * copy JAVACV *jar files to libs directory next to retrovid.jar 
 * copy all EXT files to libs directory
 
-Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that.
-
-Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
+Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that. Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
 
 Just type <b>java -jar retropic.jar</b> and do not close console window.
 
