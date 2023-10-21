@@ -12,11 +12,11 @@ Installation:
 * copy JAVACV *jar files to libs directory next to retrovid.jar 
 * copy all EXT files to libs directory
 
-Java users can run java builder with "mvn clean package" command. Maven builder is required to do that.
+Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that.
 
 Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
 
-type java -jar retropic.jar and do not close console window.
+Just type <b>java -jar retropic.jar</b> and do not close console window.
 
 ![C64 Petscii](c64petscii.png)
 
@@ -44,7 +44,7 @@ Contrast processing
 
 ![Super CPU Charset](retrovid.png)
 
-New method with neural net learns new charset definition. Movie key frames are divided into 8x8 blocks which feads net. Smmoother pictures but takes some time.
+New method with neural net learns new charset definition. Movie key frames are divided into 8x8 blocks which feads net. Smmoother pictures but takes some time. You can try to run cartridges on C64, some movies, with slow action will work nicely. 
 
 Medium
 
