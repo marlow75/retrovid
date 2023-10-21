@@ -16,6 +16,8 @@ Java users can run java builder with <b>mvn clean package</b> command. Maven bui
 
 Just type <b>java -jar retropic.jar</b> and do not close console window.
 
+CRT directory contains cartridge examples
+
 ![C64 Petscii](c64petscii.png)
 
 Medium
