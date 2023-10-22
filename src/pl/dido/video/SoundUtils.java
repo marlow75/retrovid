@@ -2,8 +2,8 @@ package pl.dido.video;
 
 public class SoundUtils {
 
-    final static float RC = 1.0f / (2200 * 2 * 3.14f); // 2,2 kHz band
-    final static float dt = 1.0f / 4400;  // 4400 kHz 
+    final static float RC = 1f / (1800 * 2 * 3.14f); // 1,8 kHz band
+    final static float dt = 1f / 4400;  // 4400 kHz 
     final static float alpha = dt / (RC + dt);
 	
 	public static void throwException() throws Exception {

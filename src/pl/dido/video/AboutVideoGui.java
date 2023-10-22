@@ -9,6 +9,6 @@ public class AboutVideoGui implements VideoPanel {
 
 	@Override
 	public JPanel getTab() {
-		return AboutGui.aboutTab();
+		return AboutGui.aboutTab("aboutRetroVID.htm");
 	}
 }

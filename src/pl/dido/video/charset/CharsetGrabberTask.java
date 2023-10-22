@@ -3,8 +3,6 @@ package pl.dido.video.charset;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -228,14 +226,12 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 		charset = petscii.getCharset();
 		
 		if (log.isLoggable(Level.FINEST)) {
-			Files.write(Path.of("c:/temp/charset.bin"), charset);
+			Files.write(Path.of("charset.bin"), charset);
 			log.finest("Charset saved.");
 		}
 		
 		final Vector<Dataset> samples = NNUtils.loadData(new ByteArrayInputStream(charset));
 		neural.train(samples);
-		neural.save(new FileOutputStream(new File("c:/temp/charset.L1network")));
-
 		((CharsetRenderer) petscii).setNeural(neural);
 	}
 
