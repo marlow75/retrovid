@@ -2,9 +2,12 @@
 
 Now you can make a short clip for your retro computer. Just open your favorite movie, select scene (slider, preview button) and grab it (grab button). Thats all.
 
-C64 PETSCII and CHARSET Super CPU supported.
+## Versions
 
-Installation: 
+* 1.0 - All charset characters are made by neural net, minor changes
+* 0.1 - C64 PETSCII and CHARSET Super CPU supported.
+
+## Installation: 
 
 * install JRE16 or newer
 * install video library for JAVA [javacv](https://sourceforge.net/projects/javacv.mirror/)
@@ -19,6 +22,8 @@ Just type <b>java -jar retropic.jar</b> and do not close console window.
 CRT directory contains cartridge examples
 
 Credits to https://github.com/danielkleebinder - RetroVID uses new neural network approach with softmax to speed up learing (multithreaded).
+
+## Usage
 
 ![C64 Petscii](c64petscii.png)
 

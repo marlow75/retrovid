@@ -45,7 +45,7 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 	public CharsetGrabberTask(final PetsciiVideoConfig config) {
 		super(config);
 
-		som = new SOMCharsetNetwork(13, 13);
+		som = new SOMCharsetNetwork(16, 16);
 		som.addProgressListener(this);
 
 		neural = new HL1SoftmaxNetwork(64, 128, 256);
@@ -222,8 +222,9 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 		final SOMDataset dataset = grabKeyFrames(config.selectedFile.getName(), frameGrabber);
 		charset = som.train(dataset);
 		
-		((CharsetRenderer) petscii).replaceCharacters(charset, 87, 169);
-		charset = petscii.getCharset();
+		Files.write(Path.of("c:/temp/charset.bin"), charset);
+		//((CharsetRenderer) petscii).replaceCharacters(charset, 87, 169);
+		//charset = petscii.getCharset();
 		
 		if (log.isLoggable(Level.FINEST)) {
 			Files.write(Path.of("charset.bin"), charset);
