@@ -4,7 +4,7 @@ Now you can make a short clip for your retro computer. Just open your favorite m
 
 ## Versions
 
-* 1.1 - Imporved palette & color handling.
+* 1.1 - Improved palette & color handling.
 * 1.0 - All charset characters are made by neural net, minor changes.
 * 0.1 - C64 PETSCII and CHARSET Super CPU supported.
 
@@ -52,7 +52,7 @@ Contrast processing
 
 ![Super CPU Charset](retrovid.png)
 
-New method with neural net learns new charset definition. Movie key frames are divided into 8x8 blocks which feads net. Smoother pictures but takes some time. You can try to run cartridges on C64, some movies, with slow action will work nicely. 
+New method with neural net learns new charset definitions. Movie key frames are divided into 8x8 blocks which feads net. Smoother pictures but takes some time. You can try to run cartridges on C64. Some movies, with slow action will work nicely. 
 
 Medium
 

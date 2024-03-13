@@ -181,7 +181,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			}
 	}
 
-	private void playFragment(final float time) {
+	private void playFragment(final int time) {
 		try {
 			converterButtons(false);
 			grabber.close();

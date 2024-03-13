@@ -16,7 +16,6 @@ import org.bytedeco.javacv.Java2DFrameConverter;
 
 import pl.dido.image.petscii.PetsciiRenderer;
 import pl.dido.image.utils.Utils;
-import pl.dido.video.SoundUtils;
 import pl.dido.video.compression.CodesCompression;
 import pl.dido.video.compression.ColorsCodesCompression;
 import pl.dido.video.compression.Compression;
@@ -26,6 +25,7 @@ import pl.dido.video.medium.GSVideoCartridge;
 import pl.dido.video.medium.Medium;
 import pl.dido.video.medium.PRGFile;
 import pl.dido.video.medium.VideoMedium;
+import pl.dido.video.utils.SoundUtils;
 
 public class PetsciiGrabberTask extends SwingWorker<Integer, Void> {
 	private static final Logger log = Logger.getLogger(PetsciiGrabberTask.class.getCanonicalName());
@@ -73,8 +73,8 @@ public class PetsciiGrabberTask extends SwingWorker<Integer, Void> {
 			
 			if (medium instanceof AudioMedium) {
 				frameGrabber.start();
-				frameGrabber.setFrameNumber(config.startFrame);
-				
+				frameGrabber.setAudioFrameNumber(config.startFrame);
+
 				grabAudio(frameGrabber, medium);
 				frameGrabber.stop();
 			}
@@ -96,8 +96,12 @@ public class PetsciiGrabberTask extends SwingWorker<Integer, Void> {
 
 	protected void grabAudio(final FFmpegFrameGrabber frameGrabber, final VideoMedium medium) throws Exception {
 		float avg = 0;
+		boolean first = true, hiNibble = false;
+
+		short data = 0; // data - low and high nibble
+
 		float currentTime = firstFrameTime;
-		final float timeQuantum = 1f / 4400 * 1_000_000;
+		final float timeQuantum = 1f / 4400 * 1_000_000; // microseconds
 		
 		while (!isCancelled()) {
 			final Frame frame = frameGrabber.grab();
@@ -112,29 +116,31 @@ public class PetsciiGrabberTask extends SwingWorker<Integer, Void> {
 				final ByteArrayOutputStream c64Samples = new ByteArrayOutputStream(bufferLen);
 				sampleBuffer.rewind();
 				
-				// check movie time
-				final float frameTime = frame.timestamp;				
+				// check frame time
+				final float frameTime = frame.timestamp;
 				final float delta = frameTime - currentTime;
 				
+				// blank bytes
 				if (delta > 0) {
-					final int mutes = (int) ((Math.round(delta / timeQuantum) + Math.random()) / 2);
+					final int mutes = (int) (Math.round(delta / timeQuantum) + Math.random());
 					
-					for (int i = 0; i < mutes; i++)
-						c64Samples.write(0x0);
+					for (int i = 0; i < mutes; i++) {
+						if (hiNibble)
+							c64Samples.write(0x0);
+						
+						hiNibble = !hiNibble;
+					}
 				}
 				
-				currentTime += delta + (2 * bufferLen * timeQuantum);
+				currentTime += delta + ((sampleBuffer.capacity() / frame.audioChannels / 44_100f) * 1_000_000);
 				int i = 0;
-				
-				boolean first = true, hiNibble = false;
-				short data = 0; // data - low and high nibble
 
 				while (sampleBuffer.position() < sampleBuffer.capacity()) {
 					// two channels so get the average for mono
 					float sample = ((sampleBuffer.get() + sampleBuffer.get()) / 2) & 0xffff;
 
 					if (first) {
-						avg += sample; // calculate avg for 10 bytes
+						avg = sample;
 						first = false;
 
 						continue;
@@ -142,19 +148,17 @@ public class PetsciiGrabberTask extends SwingWorker<Integer, Void> {
 
 					avg = SoundUtils.lowPass(avg, sample);
 					
-					if (i++ % AUDIO_SKIP == (AUDIO_SKIP - 1)) { // every 10 bytes 44,1 kHz / 10 = 4,4 kHz
+					if (i++ % AUDIO_SKIP == (AUDIO_SKIP - 1)) { // every AUDIO_SKIP bytes 44,1 kHz
 						sample = Math.round(avg * 0.000228882 + Math.random()); // sound scaling 16->8 & dithering
 						final short p = (short) (sample > 15 ? 15: sample);
 						
 						if (hiNibble) {
 							data |= p << 4; // high nibble
-
-							hiNibble = false;
 							c64Samples.write(data);
-						} else {
+						} else
 							data = p; // low nibble
-							hiNibble = true;
-						}
+						
+						hiNibble = !hiNibble;
 					}
 				}
 

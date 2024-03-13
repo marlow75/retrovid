@@ -32,6 +32,7 @@ import pl.dido.video.charset.CharsetVideoGui;
 import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
 import pl.dido.video.petscii.PetsciiVideoGui;
+import pl.dido.video.utils.GuiUtils;
 import pl.dido.video.utils.VideoGui;
 import pl.dido.video.utils.VideoPanel;
 
@@ -69,7 +70,7 @@ public class RetroVID {
 		frame.getContentPane().setLayout(new BorderLayout());
 
 		final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		tabbedPane.setFont(GuiUtils.std);
 		tabs = new VideoPanel[3];
 		
 		final Button btnLoad = new Button("Load file...");

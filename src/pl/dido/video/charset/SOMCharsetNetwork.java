@@ -11,7 +11,7 @@ public class SOMCharsetNetwork {
 	protected Neuron matrix[][];
 	protected int width, height;
 
-	protected float radius = 0.8f;
+	protected float radius = 0.4f;
 	protected int epoch = 10;
 
 	protected ArrayList<ProgressListener> listeners;
@@ -47,12 +47,6 @@ public class SOMCharsetNetwork {
 				final int bits = (int) (Math.random() * 64);
 				for (int i = 0; i < bits; i++)
 					loc.set((int)(Math.random() * 64));
-				
-//				for (int i = 0; i < 64; i++)
-//					if ((((int) (Math.random() * 100)) % 2) == 0)
-//						loc.set(i);
-//					else
-//						loc.clear(i);
 			}
 		}
 	}

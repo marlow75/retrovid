@@ -17,7 +17,7 @@ import pl.dido.image.utils.Config;
 
 public class GuiUtils {
 
-	public final static Font std = new Font("Tahoma", Font.BOLD, 10);
+	public final static Font std = new Font("Tahoma", Font.PLAIN, 12);
 	public final static Font bold = new Font("Tahoma", Font.BOLD, 10);
 		
 	public static final void addContrastControls(final JPanel panel, final Config config) {
@@ -75,7 +75,7 @@ public class GuiUtils {
 		final JRadioButton rdbtnHEButton = new JRadioButton("HE");
 		rdbtnHEButton.setToolTipText("Histogram Equalizer");
 		rdbtnHEButton.setFont(std);
-		rdbtnHEButton.setBounds(116, 213, 50, 20);
+		rdbtnHEButton.setBounds(106, 213, 50, 20);
 		rdbtnHEButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.HE);
 
 		rdbtnHEButton.addActionListener(new ActionListener() {
@@ -90,7 +90,7 @@ public class GuiUtils {
 		final JRadioButton rdbtnCLAHEButton = new JRadioButton("CLAHE");
 		rdbtnCLAHEButton.setToolTipText("Clipped Adaptive Histogram Equalizer");
 		rdbtnCLAHEButton.setFont(std);
-		rdbtnCLAHEButton.setBounds(186, 213, 70, 20);
+		rdbtnCLAHEButton.setBounds(166, 213, 70, 20);
 		rdbtnCLAHEButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.CLAHE);
 
 		rdbtnCLAHEButton.addActionListener(new ActionListener() {
@@ -101,10 +101,26 @@ public class GuiUtils {
 		});
 
 		panel.add(rdbtnCLAHEButton);
+		
+//		final JRadioButton rdbtnSWAHEButton = new JRadioButton("SWAHE");
+//		rdbtnSWAHEButton.setToolTipText("Clipped Adaptive Histogram Equalizer");
+//		rdbtnSWAHEButton.setFont(std);
+//		rdbtnSWAHEButton.setBounds(236, 213, 70, 20);
+//		rdbtnSWAHEButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.SWAHE);
+//
+//		rdbtnSWAHEButton.addActionListener(new ActionListener() {
+//			public void actionPerformed(final ActionEvent e) {
+//				config.highContrast = Config.HIGH_CONTRAST.SWAHE;
+//				sldBrightness.setEnabled(true);
+//			}
+//		});
+//
+//		panel.add(rdbtnSWAHEButton);
 
 		final ButtonGroup groupContrast = new ButtonGroup();
 		groupContrast.add(rdbtnNoContrastExpanderButton);
 		groupContrast.add(rdbtnHEButton);
 		groupContrast.add(rdbtnCLAHEButton);
+//		groupContrast.add(rdbtnSWAHEButton);
 	}
 }
