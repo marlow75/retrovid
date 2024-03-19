@@ -66,8 +66,8 @@ public class SOMTrainer {
 			nb = pixels[i + 2] & 0xff;
 
 			// dimmer better
-			occurrence[Gfx.getColorIndex(colorAlg, colorModel, palette, nr, ng, nb)] += (255
-					- Gfx.getLumaByCM(colorModel, nr, ng, nb));
+			occurrence[Gfx.getColorIndex(colorAlg, palette, nr, ng, nb)] += (255
+					- Gfx.getLuma(nr, ng, nb));
 		}
 
 		// get background color with maximum occurrence
@@ -87,7 +87,7 @@ public class SOMTrainer {
 		ng = palette[k][1];
 		nb = palette[k][2];
 
-		final float backLuma = Gfx.getLumaByCM(colorModel, nr, ng, nb);
+		final float backLuma = Gfx.getLuma(nr, ng, nb);
 
 		for (int y = 0; y < 200; y += 8) {
 			final int p = y * 320 * 3;
@@ -111,10 +111,10 @@ public class SOMTrainer {
 						work[index++] = g;
 						work[index++] = b;
 
-						final float distance = Math.abs(Gfx.getLumaByCM(colorModel, r, g, b) - backLuma);
+						final float distance = Math.abs(Gfx.getLuma(r, g, b) - backLuma);
 						if (max_distance < distance) {
 							max_distance = distance;
-							f = Gfx.getColorIndex(colorAlg, colorModel, palette, r, g, b);
+							f = Gfx.getColorIndex(colorAlg, palette, r, g, b);
 						}
 					}
 				}
@@ -136,8 +136,8 @@ public class SOMTrainer {
 						final int b = work[pyx0 + 2];
 
 						// fore or background color?
-						final float df = Gfx.getDistanceByCM(colorAlg, colorModel, r, g, b, fr, fg, fb);
-						final float db = Gfx.getDistanceByCM(colorAlg, colorModel, r, g, b, nr, ng, nb);
+						final float df = Gfx.getDistance(colorAlg, r, g, b, fr, fg, fb);
+						final float db = Gfx.getDistance(colorAlg, r, g, b, nr, ng, nb);
 
 						// ones as color of the bright pixels
 						if (df <= db)

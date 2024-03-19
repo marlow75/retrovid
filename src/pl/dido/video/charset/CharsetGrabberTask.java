@@ -58,7 +58,7 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 		return new CharsetRenderer(config);
 	}
 
-	protected SOMDataset getChars(final byte pixels[], final NEAREST_COLOR colorAlg, final int colorModel)
+	protected SOMDataset getChars(final byte pixels[], final NEAREST_COLOR colorAlg)
 			throws IOException {
 		final SOMDataset dataset = new SOMDataset();
 
@@ -75,8 +75,8 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 			nb = pixels[i + 2] & 0xff;
 
 			// dimmer better
-			occurrence[Gfx.getColorIndex(colorAlg, colorModel, petscii.palette, nr, ng, nb)] += (255
-					- Gfx.getLumaByCM(colorModel, nr, ng, nb));
+			occurrence[Gfx.getColorIndex(colorAlg, petscii.palette, nr, ng, nb)] += (255
+					- Gfx.getLuma(nr, ng, nb));
 		}
 
 		// get background color with maximum occurrence
@@ -94,7 +94,7 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 		ng = petscii.palette[k][1];
 		nb = petscii.palette[k][2];
 
-		final float backLuma = Gfx.getLumaByCM(colorModel, nr, ng, nb);
+		final float backLuma = Gfx.getLuma(nr, ng, nb);
 
 		for (int y = 0; y < 200; y += 8) {
 			final int p = y * 320 * 3;
@@ -118,10 +118,10 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 						work[index++] = g;
 						work[index++] = b;
 
-						final float distance = Math.abs(Gfx.getLumaByCM(colorModel, r, g, b) - backLuma);
+						final float distance = Math.abs(Gfx.getLuma(r, g, b) - backLuma);
 						if (max_distance < distance) {
 							max_distance = distance;
-							f = Gfx.getColorIndex(colorAlg, colorModel, petscii.palette, r, g, b);
+							f = Gfx.getColorIndex(colorAlg, petscii.palette, r, g, b);
 						}
 					}
 				}
@@ -143,8 +143,8 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 						final int b = work[pyx0 + 2];
 
 						// fore or background color?
-						final float df = Gfx.getDistanceByCM(colorAlg, colorModel, r, g, b, fr, fg, fb);
-						final float db = Gfx.getDistanceByCM(colorAlg, colorModel, r, g, b, nr, ng, nb);
+						final float df = Gfx.getDistance(colorAlg, r, g, b, fr, fg, fb);
+						final float db = Gfx.getDistance(colorAlg, r, g, b, nr, ng, nb);
 
 						// ones as color of the bright pixels
 						if (df <= db)
@@ -176,7 +176,7 @@ public class CharsetGrabberTask extends PetsciiGrabberTask implements ProgressLi
 
 				final BufferedImage img = petscii.getImage();
 				dataset.addAll(getChars(((DataBufferByte) img.getRaster().getDataBuffer()).getData(),
-						NEAREST_COLOR.PERCEPTED, petscii.getImage().getType()));
+						NEAREST_COLOR.PERCEPTED));
 
 				frames++;
 				setProgress(progress++ % 100);
