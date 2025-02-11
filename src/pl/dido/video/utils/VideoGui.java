@@ -24,10 +24,9 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
-import pl.dido.image.petscii.PetsciiRenderer;
+import pl.dido.image.renderer.AbstractRenderer;
 import pl.dido.image.utils.Gfx;
 import pl.dido.video.petscii.PetsciiGrabberTask;
-import pl.dido.video.petscii.PetsciiVideoConfig;
 
 public abstract class VideoGui implements ActionListener, PropertyChangeListener, VideoPanel {
 	
@@ -40,19 +39,19 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 	protected Button btnRecord;
 	
 	protected JProgressBar progressBar;
-	protected PetsciiVideoConfig config;
+	protected VideoConfig config;
 	
 	protected ProgressMonitor progressMonitor;
 	protected JFrame frame;
 	
-	protected PetsciiGrabberTask task;
-	protected PetsciiRenderer petscii;
+	protected GrabberTask task;
+	protected AbstractRenderer renderer;
 	
-	public VideoGui(final JFrame frame, final PetsciiVideoConfig config) {
-		this.config = config;
-		
-		petscii = new PetsciiRenderer(config);
+	public VideoGui(final JFrame frame, final AbstractRenderer renderer, final VideoConfig config) {
+		this.renderer = renderer;
 		this.frame = frame;
+		
+		this.config = config;
 	}
 
 	public JPanel getTab() {
@@ -113,12 +112,11 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 
 		btnPlay.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				playFragment(20); // 20 seconds
+				playFragment(2); // 2 seconds
 			}
 		});
 
 		btnRecord.addActionListener(this);
-		
 		return panel;
 	}
 	
@@ -165,7 +163,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		task.execute();
 	}
 	
-	protected abstract PetsciiGrabberTask getGrabberTask();
+	protected abstract GrabberTask getGrabberTask();
 
 	public void displaySingleFrame() {
 		if (config.selectedFile != null)
@@ -174,8 +172,9 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 				grabber.start();
 				grabber.setFrameNumber(config.startFrame);
 				
-				frame2petscii(petscii, false);
+				frame2ascii(renderer);
 			} catch (final Exception ex) {
+				ex.printStackTrace();
 				JOptionPane.showMessageDialog(null, "ERROR", "Can't display single fragment !!!",
 						JOptionPane.ERROR_MESSAGE);
 			}
@@ -195,7 +194,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			grabber.setFrameNumber(start);
 			
 			for (int i = start; i < end; i++)
-				frame2petscii(petscii, i % 3 == 0); // slide show
+				frame2ascii(renderer); // slide show
 
 		} catch (final Exception ex) {
 			JOptionPane.showMessageDialog(null, "ERROR", "Can't play fragment !!!", JOptionPane.ERROR_MESSAGE);
@@ -228,17 +227,17 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		return frame;
 	}
 	
-	private void frame2petscii(final PetsciiRenderer petscii, final boolean skip) {
+	private void frame2ascii(final AbstractRenderer renderer) {
 		Frame frame = getFrame();
-		if (!skip)
-			try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
-	
-				petscii.setImage(Gfx.scaleWithStretching(conv.convert(frame), 320, 200));
-				petscii.imageProcess();
-	
-				movie.setImage(petscii.getImage());
-				movie.showImage();
-			}
+
+		try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
+			
+			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.config.getScreenWidth(), config.config.getScreenHeight()));
+			renderer.imageProcess();
+
+			movie.setImage(Gfx.scaleWithStretching(renderer.getImage(), 320, 200));
+			movie.showImage();
+		}
 
 		frame.close();
 	}
@@ -263,7 +262,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		return grabber;
 	}
 
-	public PetsciiVideoConfig getConfig() {
+	public VideoConfig getConfig() {
 		return config;
 	}
 }

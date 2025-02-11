@@ -32,7 +32,7 @@ public class GuiUtils {
 		panel.add(brightLabel);
 
 		final JSlider sldBrightness = new JSlider(JSlider.HORIZONTAL, 1, 5, config.details);
-		sldBrightness.setEnabled(config.highContrast == Config.HIGH_CONTRAST.SWAHE || config.highContrast == Config.HIGH_CONTRAST.CLAHE);
+		sldBrightness.setEnabled(config.high_contrast == Config.HIGH_CONTRAST.SWAHE || config.high_contrast == Config.HIGH_CONTRAST.CLAHE);
 		sldBrightness.setFont(GuiUtils.std);
 		sldBrightness.setBounds(180, 255, 120, 35);
 		sldBrightness.addChangeListener(new ChangeListener() {
@@ -61,11 +61,11 @@ public class GuiUtils {
 		rdbtnNoContrastExpanderButton.setToolTipText("No contrast processing");
 		rdbtnNoContrastExpanderButton.setFont(std);
 		rdbtnNoContrastExpanderButton.setBounds(46, 213, 50, 20);
-		rdbtnNoContrastExpanderButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.NONE);
+		rdbtnNoContrastExpanderButton.setSelected(config.high_contrast == Config.HIGH_CONTRAST.NONE);
 
 		rdbtnNoContrastExpanderButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				config.highContrast = Config.HIGH_CONTRAST.NONE;
+				config.high_contrast = Config.HIGH_CONTRAST.NONE;
 				sldBrightness.setEnabled(false);
 			}
 		});
@@ -76,11 +76,11 @@ public class GuiUtils {
 		rdbtnHEButton.setToolTipText("Histogram Equalizer");
 		rdbtnHEButton.setFont(std);
 		rdbtnHEButton.setBounds(106, 213, 50, 20);
-		rdbtnHEButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.HE);
+		rdbtnHEButton.setSelected(config.high_contrast == Config.HIGH_CONTRAST.HE);
 
 		rdbtnHEButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				config.highContrast = Config.HIGH_CONTRAST.HE;
+				config.high_contrast = Config.HIGH_CONTRAST.HE;
 				sldBrightness.setEnabled(false);
 			}
 		});
@@ -91,11 +91,11 @@ public class GuiUtils {
 		rdbtnCLAHEButton.setToolTipText("Clipped Adaptive Histogram Equalizer");
 		rdbtnCLAHEButton.setFont(std);
 		rdbtnCLAHEButton.setBounds(166, 213, 70, 20);
-		rdbtnCLAHEButton.setSelected(config.highContrast == Config.HIGH_CONTRAST.CLAHE);
+		rdbtnCLAHEButton.setSelected(config.high_contrast == Config.HIGH_CONTRAST.CLAHE);
 
 		rdbtnCLAHEButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				config.highContrast = Config.HIGH_CONTRAST.CLAHE;
+				config.high_contrast = Config.HIGH_CONTRAST.CLAHE;
 				sldBrightness.setEnabled(true);
 			}
 		});

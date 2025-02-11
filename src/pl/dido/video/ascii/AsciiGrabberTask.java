@@ -1,4 +1,4 @@
-package pl.dido.video.petscii;
+package pl.dido.video.ascii;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -12,29 +12,25 @@ import javax.imageio.ImageIO;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 
-import pl.dido.image.petscii.PetsciiRenderer;
+import pl.dido.image.pc.PCRenderer;
+import pl.dido.image.renderer.AbstractRenderer;
 import pl.dido.image.utils.Utils;
-import pl.dido.video.compression.CodesCompression;
-import pl.dido.video.compression.ColorsCodesCompression;
-import pl.dido.video.compression.Compression;
 import pl.dido.video.medium.AudioMedium;
-import pl.dido.video.medium.GSAudioVideoCartridge;
-import pl.dido.video.medium.GSVideoCartridge;
 import pl.dido.video.medium.Medium;
-import pl.dido.video.medium.PRGFile;
 import pl.dido.video.medium.VideoMedium;
 import pl.dido.video.utils.GrabberTask;
 import pl.dido.video.utils.SoundUtils;
 
-public class PetsciiGrabberTask extends GrabberTask {
-	private static final Logger log = Logger.getLogger(PetsciiGrabberTask.class.getCanonicalName());
+public class AsciiGrabberTask extends GrabberTask {
+	private static final Logger log = Logger.getLogger(AsciiGrabberTask.class.getCanonicalName());
 	
-	public PetsciiGrabberTask(final PetsciiVideoConfig config) {
+	public AsciiGrabberTask(final AsciiVideoConfig config) {
 		super(config);
 	}
-
-	protected PetsciiRenderer getRenderer() {
-		return new PetsciiRenderer(config.config);
+	
+	@Override
+	protected AbstractRenderer getRenderer() {
+		return new PCRenderer(config.config);
 	}
 
 	public int convert() {
@@ -154,23 +150,23 @@ public class PetsciiGrabberTask extends GrabberTask {
 
 	protected int grabVideo(final String fileName, final FFmpegFrameGrabber frameGrabber, final VideoMedium medium)
 			throws Exception {
-		int oldScreen[] = null, oldNibble[] = null;
+		int oldScreen[] = null, oldColor[] = null;
 
 		Frame frame = frameGrabber.grabFrame(false, true, true, false);
 		firstFrameTime = frame.timestamp;
 		
-		PetsciiRenderer petscii = (PetsciiRenderer) renderer;
+		final PCRenderer cgaRenderer = (PCRenderer) renderer;
 		
-		petscii.setImage(con.convert(frame));
+		cgaRenderer.setImage(con.convert(frame));
 		frame.close();
 
-		renderer.imageProcess();
-		medium.saveKeyFrame(petscii.getBackgroundColor(), petscii.getScreen(), petscii.getNibble());
+		cgaRenderer.imageProcess();
+		//medium.saveKeyFrame(cgaRenderer.getBackgroundColor(), cgaRenderer.getScreen(), cgaRenderer.getColor());
 
-		oldScreen = petscii.getScreen().clone();
-		oldNibble = petscii.getNibble().clone();
+		oldScreen = cgaRenderer.getScreen().clone();
+		oldColor = cgaRenderer.getColor().clone();
 
-		ImageIO.write(petscii.getImage(), "jpg", new File(fileName + "0.jpg"));
+		ImageIO.write(cgaRenderer.getImage(), "jpg", new File(fileName + "0.jpg"));
 
 		int frames = 1, grabbedFrames = 1, skipVideo = config.getSkipFrameRate();
 		final int lastFrame = frameGrabber.getLengthInVideoFrames();
@@ -187,18 +183,17 @@ public class PetsciiGrabberTask extends GrabberTask {
 				if (frames % skipVideo == 0) {
 					setProgress(grabbedFrames % 100);
 
-					petscii.setImage(con.convert(frame));
-					petscii.imageProcess();
+					cgaRenderer.setImage(con.convert(frame));
+					cgaRenderer.imageProcess();
 
-					if (!medium.saveFrame(petscii.getBackgroundColor(), oldScreen, oldNibble, petscii.getScreen(),
-							petscii.getNibble()))
+					if (!medium.saveFrame(0, oldScreen, oldColor, cgaRenderer.getScreen(), cgaRenderer.getColor()))
 						break; // end of medium space
 
-					oldScreen = petscii.getScreen().clone();
-					oldNibble = petscii.getNibble().clone();
+					oldScreen = cgaRenderer.getScreen().clone();
+					oldColor = cgaRenderer.getColor().clone();
 
 					if (log.isLoggable(Level.FINE))
-						ImageIO.write(petscii.getImage(), "jpg",
+						ImageIO.write(cgaRenderer.getImage(), "jpg",
 								new File(fileName + String.format("%2d", grabbedFrames) + ".jpg"));
 
 					grabbedFrames++;
@@ -215,26 +210,6 @@ public class PetsciiGrabberTask extends GrabberTask {
 	}
 
 	protected Medium getMedium() throws IOException {
-		final Compression compression;
-		
-		PetsciiVideoConfig petsciiVideoConfig = (PetsciiVideoConfig) config;
-
-		switch (petsciiVideoConfig.compression) {
-		default:
-			compression = new CodesCompression();
-			break;
-		case CODES_COLOR:
-			compression = new ColorsCodesCompression();
-			break;
-		}
-
-		switch (petsciiVideoConfig.mediumType) {
-		case CRT:
-			return new GSVideoCartridge(compression);
-		case CRT_SND:
-			return new GSAudioVideoCartridge(compression);
-		default: // PRG
-			return new PRGFile(compression);
-		}
+		return null;
 	}
 }

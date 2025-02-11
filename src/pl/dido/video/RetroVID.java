@@ -28,13 +28,18 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 
 import pl.dido.image.utils.Utils;
-import pl.dido.video.charset.CharsetVideoGui;
 import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
 import pl.dido.video.petscii.PetsciiVideoGui;
+import pl.dido.video.supercpu.SupercpuVideoConfig;
+import pl.dido.video.supercpu.SupercpuVideoGui;
 import pl.dido.video.utils.GuiUtils;
 import pl.dido.video.utils.VideoGui;
 import pl.dido.video.utils.VideoPanel;
+import pl.dido.video.utils.VideoConfig;
+
+import pl.dido.video.ascii.AsciiVideoConfig;
+import pl.dido.video.ascii.AsciiVideoGui;
 
 public class RetroVID {
 	protected String default_path;
@@ -71,17 +76,19 @@ public class RetroVID {
 
 		final JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setFont(GuiUtils.std);
-		tabs = new VideoPanel[3];
+		tabs = new VideoPanel[4];
 		
 		final Button btnLoad = new Button("Load file...");
-		tabs[0] = new PetsciiVideoGui(frame);
-		tabs[1] = new CharsetVideoGui(frame);
-		tabs[2] = new AboutVideoGui();
+		tabs[0] = new PetsciiVideoGui(frame, new PetsciiVideoConfig());
+		tabs[1] = new SupercpuVideoGui(frame, new SupercpuVideoConfig());
+		tabs[2] = new AsciiVideoGui(frame, new AsciiVideoConfig());
+		tabs[3] = new AboutVideoGui();
 		
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		tabbedPane.addTab("C64 PETSCII", null, tabs[0].getTab(), null);
 		tabbedPane.addTab("Super CPU CHARSET", null, tabs[1].getTab(), null);
-		tabbedPane.addTab("About", null, tabs[2].getTab(), null);
+		tabbedPane.addTab("PC CGA", null, tabs[2].getTab(), null);
+		tabbedPane.addTab("About", null, tabs[3].getTab(), null);
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent changeEvent) {
@@ -106,7 +113,7 @@ public class RetroVID {
 
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					final VideoGui tab = (VideoGui) tabs[currentTabIndex];
-					final PetsciiVideoConfig config = (PetsciiVideoConfig) tab.getConfig();
+					final VideoConfig config = (VideoConfig) tab.getConfig();
 					
 					config.selectedFile = fc.getSelectedFile();
 

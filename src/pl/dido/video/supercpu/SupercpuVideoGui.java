@@ -1,4 +1,4 @@
-package pl.dido.video.petscii;
+package pl.dido.video.supercpu;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,47 +9,32 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
-import pl.dido.image.petscii.PetsciiConfig;
-import pl.dido.image.petscii.PetsciiConfig.NETWORK;
-import pl.dido.image.petscii.PetsciiRenderer;
 import pl.dido.video.petscii.PetsciiVideoConfig.COMPRESSION;
 import pl.dido.video.petscii.PetsciiVideoConfig.MEDIUM_TYPE;
 import pl.dido.video.utils.GuiUtils;
 import pl.dido.video.utils.VideoGui;
 
-public class PetsciiVideoGui extends VideoGui {
+public class SupercpuVideoGui extends VideoGui {
 	
-	public PetsciiVideoGui(final JFrame frame, final PetsciiVideoConfig config) {
-		super(frame, new PetsciiRenderer(config.config), config);
+	public SupercpuVideoGui(final JFrame frame, final SupercpuVideoConfig config) {
+		super(frame, new SupercpuRenderer(config.config), config);
 	} 
-
+	
 	@Override
 	public JPanel getTab() {
 		final JPanel panel = super.getTab();
-		final PetsciiVideoConfig petsciiVideoConfig = (PetsciiVideoConfig) config;
-
+		
 		final JLabel lblmediumLabel = new JLabel("Medium:");
 		lblmediumLabel.setFont(GuiUtils.bold);
 		lblmediumLabel.setBounds(20, 10, 169, 14);
 		panel.add(lblmediumLabel);
-
-		final JRadioButton rdbtnPRGButton = new JRadioButton("PRG");
-		rdbtnPRGButton.setToolTipText("Pack movie into prg file - 50kb");
-		rdbtnPRGButton.setFont(GuiUtils.std);
-		rdbtnPRGButton.setBounds(46, 30, 50, 23);
-		rdbtnPRGButton.setSelected(petsciiVideoConfig.mediumType == MEDIUM_TYPE.PRG);
-		rdbtnPRGButton.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				petsciiVideoConfig.mediumType = MEDIUM_TYPE.PRG;
-			}
-		});
-
-		panel.add(rdbtnPRGButton);
+		
+		final SupercpuVideoConfig petsciiVideoConfig = (SupercpuVideoConfig) config;
 
 		final JRadioButton rdbtnCRTVideoButton = new JRadioButton("CRT");
 		rdbtnCRTVideoButton.setToolTipText("Pack movie into GS cartridge file without audio - 512kb");
 		rdbtnCRTVideoButton.setFont(GuiUtils.std);
-		rdbtnCRTVideoButton.setBounds(100, 30, 50, 23);
+		rdbtnCRTVideoButton.setBounds(46, 30, 50, 23);
 		rdbtnCRTVideoButton.setSelected(petsciiVideoConfig.mediumType == MEDIUM_TYPE.CRT);
 		rdbtnCRTVideoButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
@@ -62,7 +47,7 @@ public class PetsciiVideoGui extends VideoGui {
 		final JRadioButton rdbtnCRTAudioButton = new JRadioButton("CRT audio");
 		rdbtnCRTAudioButton.setToolTipText("Pack movie into GS cartridge file with audio - 512kb");
 		rdbtnCRTAudioButton.setFont(GuiUtils.std);
-		rdbtnCRTAudioButton.setBounds(154, 30, 100, 23);
+		rdbtnCRTAudioButton.setBounds(100, 30, 100, 23);
 		rdbtnCRTAudioButton.setSelected(petsciiVideoConfig.mediumType == MEDIUM_TYPE.CRT_SND);
 		rdbtnCRTAudioButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
@@ -71,12 +56,11 @@ public class PetsciiVideoGui extends VideoGui {
 		});
 
 		panel.add(rdbtnCRTAudioButton);
-
+		
 		final ButtonGroup groupCompression = new ButtonGroup();
-		groupCompression.add(rdbtnPRGButton);
 		groupCompression.add(rdbtnCRTVideoButton);
 		groupCompression.add(rdbtnCRTAudioButton);
-
+		
 		final JLabel lblCompLabel = new JLabel("Compression mode:");
 		lblCompLabel.setFont(GuiUtils.bold);
 		lblCompLabel.setBounds(20, 60, 169, 14);
@@ -110,50 +94,13 @@ public class PetsciiVideoGui extends VideoGui {
 		groupMedium.add(rdbtColorButton);
 		groupMedium.add(rdbtnCodesButton);
 		panel.add(rdbtnCodesButton);
-
-		final JLabel lblConvertLabel = new JLabel("Converter mode:");
-		lblConvertLabel.setFont(GuiUtils.bold);
-		lblConvertLabel.setBounds(20, 125, 169, 14);
-		panel.add(lblConvertLabel);
-		
-		final PetsciiConfig petsciiConfig = ((PetsciiConfig) petsciiVideoConfig.config);
-
-		final JRadioButton rdbtnL1Button = new JRadioButton("Semigraphics");
-		rdbtnL1Button.setToolTipText("Prefers semigraphic");
-		rdbtnL1Button.setFont(GuiUtils.std);
-		rdbtnL1Button.setBounds(46, 142, 150, 23);
-		rdbtnL1Button.setSelected(petsciiConfig.network == NETWORK.L1);
-		rdbtnL1Button.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				petsciiConfig.network = NETWORK.L1;
-			}
-		});
-
-		panel.add(rdbtnL1Button);
-
-		final JRadioButton rdbtnL2Button = new JRadioButton("Characters");
-		rdbtnL2Button.setToolTipText("Prefers characters");
-		rdbtnL2Button.setFont(GuiUtils.std);
-		rdbtnL2Button.setBounds(46, 162, 150, 23);
-		rdbtnL2Button.setSelected(petsciiConfig.network == NETWORK.L2);
-		rdbtnL2Button.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				petsciiConfig.network = NETWORK.L2;
-			}
-		});
-
-		panel.add(rdbtnL2Button);
-
-		final ButtonGroup groupResolution = new ButtonGroup();
-		groupResolution.add(rdbtnL1Button);
-		groupResolution.add(rdbtnL2Button);
-
-		GuiUtils.addContrastControls(panel, petsciiVideoConfig.config);
+				
+		GuiUtils.addContrastControls(panel, config.config);
 		return panel;
 	}
 
 	@Override
-	protected PetsciiGrabberTask getGrabberTask() {
-		return new PetsciiGrabberTask((PetsciiVideoConfig)config);
+	protected SupercpuGrabberTask getGrabberTask() {
+		return new SupercpuGrabberTask((SupercpuVideoConfig)config);
 	}
 }
