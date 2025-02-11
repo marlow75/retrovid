@@ -4,6 +4,7 @@ Now you can make a short clip for your retro computer. Just open your favorite m
 
 ## Versions
 
+* 1.2 - NN reworked - slow but produces better output
 * 1.1 - Improved palette & color handling.
 * 1.0 - All charset characters are made by neural net, minor changes.
 * 0.1 - C64 PETSCII and CHARSET Super CPU supported.

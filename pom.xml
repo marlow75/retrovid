@@ -11,7 +11,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.8.1</version>
             <configuration>
-               <release>11</release>
+               <release>16</release>
             </configuration>
          </plugin>
          <plugin>
@@ -72,15 +72,15 @@
          <artifactId>javacpp-platform</artifactId>
          <version>1.5.9</version>
       </dependency>
-	  <dependency>
-    	 <groupId>org.openjfx</groupId>
-    	 <artifactId>javafx-base</artifactId>
-         <version>18</version>
-	  </dependency>
       <dependency>
          <groupId>pl.dido</groupId>
          <artifactId>RetroPIC</artifactId>
          <version>1.0.0-SNAPSHOT</version>
       </dependency>
+ 	  <dependency>
+	  		<groupId>NeuralLib</groupId>
+            <artifactId>NeuralLib</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+	  </dependency>	  
    </dependencies>
 </project>
