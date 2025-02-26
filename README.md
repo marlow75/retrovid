@@ -13,9 +13,7 @@ Now you can make a short clip for your retro computer. Just open your favorite m
 
 * install JRE16 or newer
 * install video library for JAVA [javacv](https://sourceforge.net/projects/javacv.mirror/)
-* download libs directory
-* copy JAVACV *jar files to libs directory next to retrovid.jar 
-* copy all EXT files to libs directory
+* download libs directory and put JAVACV library there
 
 Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that. Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
 
