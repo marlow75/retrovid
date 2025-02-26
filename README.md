@@ -13,7 +13,7 @@ Now you can make a short clip for your retro computer. Just open your favorite m
 
 * install JRE16 or newer
 * install video library for JAVA [javacv](https://sourceforge.net/projects/javacv.mirror/)
-* create libs directory
+* download libs directory
 * copy JAVACV *jar files to libs directory next to retrovid.jar 
 * copy all EXT files to libs directory
 
