@@ -20,7 +20,7 @@ public class MarkableByteArrayOutputStream extends ByteArrayOutputStream {
 		buf[position] = b;
 	}
 	
-	public void setShortAtMarkedPosition(final int position, final short b) {
+	public void setShortAtMarkedPosition(final int position, final int b) {
 		final byte hi = (byte) (b / 256);
 		final byte lo = (byte) (b - hi * 256);
 		

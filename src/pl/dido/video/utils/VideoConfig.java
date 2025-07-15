@@ -9,22 +9,23 @@ public class VideoConfig {
 	public File selectedFile;
 	public Config config;
 	
-	public int startFrame;
+	public int startVideoFrame;
 	public int frameRate;
+	
+	public boolean denoise = false;
+	private static final int desiredFramerate = 12;
 	
 	public VideoConfig(final Config config) {
 		this.config = config;
+		
+		denoise = false;
 	}
 	
 	public Config getConfig() {
 		return config;
 	}	
-	
-	public int getFrameRate() {
-		return 10;
-	}
 
 	public int getSkipFrameRate() {
-		return frameRate / getFrameRate();
+		return frameRate / desiredFramerate;
 	}
 }

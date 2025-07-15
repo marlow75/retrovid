@@ -13,6 +13,7 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 
 import pl.dido.image.petscii.PetsciiRenderer;
+import pl.dido.image.utils.Config;
 import pl.dido.image.utils.Utils;
 import pl.dido.video.compression.CodesCompression;
 import pl.dido.video.compression.ColorsCodesCompression;
@@ -28,13 +29,22 @@ import pl.dido.video.utils.SoundUtils;
 
 public class PetsciiGrabberTask extends GrabberTask {
 	private static final Logger log = Logger.getLogger(PetsciiGrabberTask.class.getCanonicalName());
+	private static final int c64SampleRate = 4410;
 	
 	public PetsciiGrabberTask(final PetsciiVideoConfig config) {
 		super(config);
 	}
 
 	protected PetsciiRenderer getRenderer() {
-		return new PetsciiRenderer(config.config);
+		// grabbing with denoiser
+		try {
+			final Config cfg = (Config) config.config.clone();
+			cfg.denoise = config.denoise;
+
+			return new PetsciiRenderer(cfg);
+		} catch (final Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public int convert() {
@@ -48,7 +58,7 @@ public class PetsciiGrabberTask extends GrabberTask {
 			Utils.createDirectory(dir);
 
 			frameGrabber.start();
-			frameGrabber.setFrameNumber(config.startFrame);
+			frameGrabber.setFrameNumber(config.startVideoFrame);
 
 			final VideoMedium medium = (VideoMedium) getMedium();
 			final int grabbedFrames = grabVideo(fileName, frameGrabber, medium);
@@ -56,15 +66,19 @@ public class PetsciiGrabberTask extends GrabberTask {
 			
 			if (medium instanceof AudioMedium) {
 				frameGrabber.start();
-				frameGrabber.setAudioFrameNumber(config.startFrame);
-
+				
+				final int timestamp = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate());
+				final int startAudioFrame = (int) (timestamp * frameGrabber.getAudioFrameRate());
+				
+				frameGrabber.setAudioFrameNumber(startAudioFrame);
 				grabAudio(frameGrabber, medium);
+				
 				frameGrabber.stop();
 			}
 
 			log.info("Grabbed: " + grabbedFrames + " frames");
 
-			medium.createMedium(fileName + config.startFrame);
+			medium.createMedium(fileName + config.startVideoFrame);
 			setProgress(100);
 		} catch (final IOException e) {
 			setProgress(100); // done
@@ -78,14 +92,13 @@ public class PetsciiGrabberTask extends GrabberTask {
 	}
 
 	protected void grabAudio(final FFmpegFrameGrabber frameGrabber, final VideoMedium medium) throws Exception {
-		float avg = 0;
-		boolean first = true, hiNibble = false;
-
-		short data = 0; // data - low and high nibble
-
-		float currentTime = firstFrameTime;
-		final float timeQuantum = 1f / 4400 * 1_000_000; // microseconds
+		int avg = 0;
+		boolean first = true, nibble = false;
 		
+		short data; // data - low and high nibble
+		int currentTime = (int) firstFrameTime;
+		
+		final int sound8Leap = (int)(1f / c64SampleRate * 1_000_000);
 		while (!isCancelled()) {
 			final Frame frame = frameGrabber.grab();
 
@@ -93,35 +106,40 @@ public class PetsciiGrabberTask extends GrabberTask {
 				break; // end of file
 
 			if (frame.type == Frame.Type.AUDIO) {
-				final ShortBuffer sampleBuffer = (ShortBuffer) frame.samples[0]; // get first
-				int bufferLen = sampleBuffer.capacity() / (2 * frame.audioChannels * AUDIO_SKIP);
-				
-				final ByteArrayOutputStream c64Samples = new ByteArrayOutputStream(bufferLen);
-				sampleBuffer.rewind();
-				
 				// check frame time
-				final float frameTime = frame.timestamp;
-				final float delta = frameTime - currentTime;
+				final long frameTime = frame.timestamp;  // microseconds
+				final long timeDelta = frameTime - currentTime;
 				
-				// blank bytes
-				if (delta > 0) {
-					final int mutes = (int) (Math.round(delta / timeQuantum) + Math.random());
-					
+				final int sampleRate = frame.sampleRate;
+				final ShortBuffer buffer = (ShortBuffer) frame.samples[0]; // get first
+
+				buffer.rewind();
+				data = 0;
+				
+				final int frameLength = Math.round(buffer.capacity() / (1f * frame.audioChannels * sampleRate) * 1_000_000); // frame duration in microseconds
+				final int bit4BufferSize = frameLength / sound8Leap / 2; // 4 bit sound buffer for single frame
+				
+				final ByteArrayOutputStream samples = new ByteArrayOutputStream(2 * bit4BufferSize); // 10% margin for blanks
+				
+				// to soon so play empty bytes
+				if (timeDelta > 0) {
+					final int mutes = timeDelta / sound8Leap + Math.random() > 0.5f ? 1 : 0;
 					for (int i = 0; i < mutes; i++) {
-						if (hiNibble)
-							c64Samples.write(0x0);
+						if (nibble)
+							samples.write(0x0);
+						else
+							data = 0;
 						
-						hiNibble = !hiNibble;
+						nibble = !nibble;
 					}
+					
+					currentTime += mutes * sound8Leap;
 				}
 				
-				currentTime += delta + ((sampleBuffer.capacity() / frame.audioChannels / 44_100f) * 1_000_000);
 				int i = 0;
-
-				while (sampleBuffer.position() < sampleBuffer.capacity()) {
+				while (buffer.position() < buffer.capacity()) {
 					// two channels so get the average for mono
-					float sample = ((sampleBuffer.get() + sampleBuffer.get()) / 2) & 0xffff;
-
+					int sample = ((buffer.get() + buffer.get()) / 2) & 0xffff;
 					if (first) {
 						avg = sample;
 						first = false;
@@ -130,24 +148,26 @@ public class PetsciiGrabberTask extends GrabberTask {
 					}
 
 					avg = SoundUtils.lowPass(avg, sample);
-					
-					if (i++ % AUDIO_SKIP == (AUDIO_SKIP - 1)) { // every AUDIO_SKIP bytes 44,1 kHz
-						sample = Math.round(avg * 0.000228882 + Math.random()); // sound scaling 16->8 & dithering
-						final short p = (short) (sample > 15 ? 15: sample);
+					if (i++ % 10 == 0) { // every AUDIO_SKIP bytes 44,1 kHz
+						short p = (short) Math.round(0.000228882f * (avg + (2 * SoundUtils.triangularDistribution(0f, 0.5f, 1f) - 1f))); // sound scaling 16->8 & dithering
+						p = p > 15 ? 15 : p;
 						
-						if (hiNibble) {
+						if (nibble) {
 							data |= p << 4; // high nibble
-							c64Samples.write(data);
+							samples.write(data);
 						} else
 							data = p; // low nibble
 						
-						hiNibble = !hiNibble;
+						nibble = !nibble;
 					}
 				}
-
-				((AudioMedium) medium).saveAudioBuffer(c64Samples.toByteArray());
+				
+				currentTime += frameLength;
+				final byte samplesBuffer[] = samples.toByteArray();
+				
+				((AudioMedium) medium).saveAudioBuffer(samplesBuffer);
 			}
-
+			
 			frame.close();
 		}
 	}
@@ -155,11 +175,10 @@ public class PetsciiGrabberTask extends GrabberTask {
 	protected int grabVideo(final String fileName, final FFmpegFrameGrabber frameGrabber, final VideoMedium medium)
 			throws Exception {
 		int oldScreen[] = null, oldNibble[] = null;
-
 		Frame frame = frameGrabber.grabFrame(false, true, true, false);
-		firstFrameTime = frame.timestamp;
 		
-		PetsciiRenderer petscii = (PetsciiRenderer) renderer;
+		firstFrameTime = frame.timestamp;
+		final PetsciiRenderer petscii = (PetsciiRenderer) renderer;
 		
 		petscii.setImage(con.convert(frame));
 		frame.close();
@@ -176,7 +195,6 @@ public class PetsciiGrabberTask extends GrabberTask {
 		final int lastFrame = frameGrabber.getLengthInVideoFrames();
 
 		log.info("Total frames: " + lastFrame);
-
 		while (!isCancelled()) {
 			frame = frameGrabber.grab();
 
@@ -216,8 +234,7 @@ public class PetsciiGrabberTask extends GrabberTask {
 
 	protected Medium getMedium() throws IOException {
 		final Compression compression;
-		
-		PetsciiVideoConfig petsciiVideoConfig = (PetsciiVideoConfig) config;
+		final PetsciiVideoConfig petsciiVideoConfig = (PetsciiVideoConfig) config;
 
 		switch (petsciiVideoConfig.compression) {
 		default:

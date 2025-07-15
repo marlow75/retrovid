@@ -17,4 +17,8 @@ public class SupercpuRenderer extends PetsciiRenderer {
 	public void setupPalette() {
 		super.setupPalette();
 	}
+
+	public void setCharset(final byte charset[]) {
+		this.charset = charset;
+	}
 }

@@ -24,8 +24,6 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 	public static int ERROR = 3;
 	public static int CANCELLED = 4;
 
-	protected static int AUDIO_SKIP = 10;
-
 	protected VideoConfig config;
 	protected final Java2DFrameConverter con;
 
@@ -34,6 +32,7 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 
 	public GrabberTask(final VideoConfig config) {
 		this.config = config;
+		
 		con = new Java2DFrameConverter();
 		renderer = getRenderer();
 	}
@@ -51,7 +50,7 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 			Utils.createDirectory(dir);
 
 			frameGrabber.start();
-			frameGrabber.setFrameNumber(config.startFrame);
+			frameGrabber.setFrameNumber(config.startVideoFrame);
 
 			final VideoMedium medium = (VideoMedium) getMedium();
 			final int grabbedFrames = grabVideo(fileName, frameGrabber, medium);
@@ -59,15 +58,19 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 
 			if (medium instanceof AudioMedium) {
 				frameGrabber.start();
-				frameGrabber.setAudioFrameNumber(config.startFrame);
-
+				
+				final int timestamp = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate());
+				final int startAudioFrame = (int) (timestamp * frameGrabber.getAudioFrameRate());
+				
+				frameGrabber.setAudioFrameNumber(startAudioFrame);
 				grabAudio(frameGrabber, medium);
+				
 				frameGrabber.stop();
 			}
 
 			log.info("Grabbed: " + grabbedFrames + " frames");
 
-			medium.createMedium(fileName + config.startFrame);
+			medium.createMedium(fileName + config.startVideoFrame);
 			setProgress(100);
 		} catch (final IOException e) {
 			setProgress(100); // done

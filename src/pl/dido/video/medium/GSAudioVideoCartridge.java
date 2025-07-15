@@ -2,19 +2,16 @@ package pl.dido.video.medium;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 import pl.dido.video.compression.Compression;
 
 public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedium {
 
-	private Logger log = Logger.getLogger(GSAudioVideoCartridge.class.getCanonicalName());
-	private final int AUDIO_FRAME_LENGTH = 184; // bytes per audio frame 4,4kHz
+	//private Logger log = Logger.getLogger(GSAudioVideoCartridge.class.getCanonicalName());
+	private final int AUDIO_FRAME_LENGTH = 184; // bytes per audio frame 4,41kHz - 4-bits
 
 	protected ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
 	protected ArrayList<Integer> audioFrames = new ArrayList<Integer>();
@@ -25,41 +22,9 @@ public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedi
 	}
 
 	@Override
-	public void createMedium(final String fileName) throws IOException {
-		this.fileName = fileName;
-		
+	public void writeVideoStream(final BufferedOutputStream prg) throws IOException {	
 		updateAudio(); // fill audio buffers for every frame
-		final BufferedOutputStream cart = new BufferedOutputStream(
-				new FileOutputStream(new File(getMediumName(fileName))), 16384);
-		try {
-			byte bank = 0;
-			out.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
-			out.flush();
-			
-			final byte bytes[] = out.toByteArray();
-			final int dataLen = bytes.length;
-
-			final byte[] header = getHeader();
-			cart.write(header);
-
-			int i = 0;
-			while (i < dataLen) {
-				if (i % BANK_SIZE == 0) {
-					log.fine("bank: " + bank);
-					cart.write(this.getChipHeader(bank++));
-				}
-				
-				cart.write(bytes[i++]);
-			}
-			
-			// fill up whole BANK to match declared chip size
-			while (i++ % BANK_SIZE != 0)
-				cart.write(-1);
-
-		} finally {
-			cart.flush();
-			cart.close();
-		}
+		super.writeVideoStream(prg);
 	}
 
 	protected void updateAudio() {
@@ -69,33 +34,38 @@ public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedi
 		for (final int position : audioFrames) {
 			final int e = (b + AUDIO_FRAME_LENGTH <= len) ? AUDIO_FRAME_LENGTH : len - b;
 			final byte[] data = Arrays.copyOfRange(samples, b, b + e);
-
-			out.fill(position, data);
+			
+			mediumStream.fill(position, data);
 			b += e;
 		}
 	}
 
 	protected int reserveSpaceForAudio() {
-		final int mark = out.size();
+		final int mark = mediumStream.size();
 		for (int i = 0; i < AUDIO_FRAME_LENGTH; i++)
-			out.write(0x0);
+			mediumStream.write(0x0);
 
 		return mark;
 	}
 
 	@Override
-	protected String getLoaderName() {
+	protected String getPlayerFileName() {
 		return "cart-loader-sound.prg";
+	}
+
+	@Override
+	protected String getExtendedFileName() {
+		return "cart-player-sound.prg";
 	}
 	
 	@Override
-	protected int writeFrameHeader() {
+	protected int writeFrameSound() {
 		audioFrames.add(reserveSpaceForAudio());
 		return AUDIO_FRAME_LENGTH;
 	}
 	
 	@Override
-	protected int getFrameHeaderSize() {
+	protected int getFrameSoundSize() {
 		return AUDIO_FRAME_LENGTH;
 	}
 

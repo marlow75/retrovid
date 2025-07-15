@@ -1,10 +1,12 @@
 package pl.dido.video.medium;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import pl.dido.image.utils.Utils;
 import pl.dido.video.compression.Compression;
 
 public class GSVideoCartridge extends PRGFile {
@@ -13,42 +15,92 @@ public class GSVideoCartridge extends PRGFile {
 	public GSVideoCartridge(final Compression compression) throws IOException {
 		super(compression);
 	}
-
+	
 	@Override
-	public void createMedium(final String fileName) throws IOException {
+	public void createMedium(final String fileName) {
 		this.fileName = fileName;
+		BufferedOutputStream prg = null;
 		
-		final BufferedOutputStream cart = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 16384);
 		try {
-			byte bank = 0;
-			out.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
-			out.flush();
-			
-			byte bytes[] = out.toByteArray();
-			final int dataLen = bytes.length;
-
-			final byte[] header = getHeader();
-			cart.write(header);
-
-			int i = 0;
-			for (i = 0; i < dataLen; i++) {
-				if (i % BANK_SIZE == 0)
-					// block size reached
-					cart.write(getChipHeader(bank++));
-
-				cart.write(bytes[i]);
-			}
-
-			while (i++ % BANK_SIZE != 0)
-				cart.write(-1);
-
+			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
+			// update frames counter
+			mediumStream.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
+			writeVideoStream(prg);
+		} catch(final IOException ex) {
+			System.out.println("Can't create CRT file !!!");
 		} finally {
-			cart.flush();
-			cart.close();
+			if (prg != null)
+			try {
+				prg.flush();
+				prg.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
+	
+	@Override
+	public void writeVideoStream(final BufferedOutputStream prg) throws IOException {
+		final byte bytes[] = mediumStream.toByteArray();
+		final int dataLen = bytes.length;
+		
+		prg.write(getHeader());
+		
+		int i = 0;
+		byte bank = 0;
+		
+		for (i = 0; i < dataLen; i++) {
+			if (i % BANK_SIZE == 0)
+				// block size reached
+				prg.write(getChipHeader(bank++));
 
-	protected byte[] getChipHeader(final byte bank) {
+			prg.write(bytes[i]);
+		}
+
+		while (i++ % BANK_SIZE != 0)
+			prg.write(-1);
+	}
+	
+	@Override
+	public int savePlayer() throws IOException {
+		int sum = 0, data;
+		BufferedInputStream in = null;
+
+		try {
+			try {
+				in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class), 8192);
+
+				in.read(); // skip loading address
+				in.read();
+				
+				while ((data = in.read()) != -1) {
+					mediumStream.write(data);
+					sum++;
+				}
+				
+			} finally {
+				in.close();
+			}
+			
+			in = new BufferedInputStream(Utils.getResourceAsStream(getExtendedFileName(), AbstractVideoMedium.class), 8192);
+			in.read(); // skip loading address
+			in.read();
+
+			while ((data = in.read()) != -1) {
+				mediumStream.write(data);
+				sum++;
+			}			
+
+			sum += reserveSpaceForFramesCounter();
+			sum += reserveSpaceForStreamAddress();
+		} finally {
+			in.close();
+		}
+
+		return sum;
+	}
+
+	protected static byte[] getChipHeader(final byte bank) {
 		return new byte[] { 0x43, 0x48, 0x49, 0x50, // CHIP
 				0x00, 0x00, 0x20, 0x10, // PACKET LENGTH 0x2010
 				0x00, 0x00, // ROM TYPE
@@ -57,7 +109,7 @@ public class GSVideoCartridge extends PRGFile {
 				0x20, 0x00 }; // ROM SIZE
 	}
 
-	protected byte[] getHeader() {
+	protected static byte[] getHeader() {
 		final byte p[] = new byte[64];
 		final byte b[] = new byte[] { 0x43, 0x36, 0x34, 0x20, 0x43, 0x41, 0x52, 0x54, 0x52, 0x49, 0x44, 0x47, 0x45,
 				0x20, 0x20, 0x20, // C64 CARTRIDGE
@@ -74,7 +126,7 @@ public class GSVideoCartridge extends PRGFile {
 		return p;
 	}
 
-	private byte[] stringToPetscii(String string) {
+	private static byte[] stringToPetscii(String string) {
 		string = string.toUpperCase();
 		final byte p[] = new byte[32];
 
@@ -93,18 +145,23 @@ public class GSVideoCartridge extends PRGFile {
 	
 	@Override
 	protected int reserveSpaceForFramesCounter() {
-		framesCounterMark = out.size(); // frames 0-65535
-		out.write(0x0);
-		out.write(0x0);
+		framesCounterMark = mediumStream.size(); // frames 0-65535
+		mediumStream.write(0x0);
+		mediumStream.write(0x0);
 		
 		return 2;
 	}
 	
 	@Override
-	protected String getLoaderName() {
+	protected String getPlayerFileName() {
 		return "cart-loader.prg";
 	}
 	
+	protected String getExtendedFileName() {
+		return "cart-player.prg";
+	}
+	
+	@Override
 	public int getMaxSize() {
 		return 512 * 1024; // 512kb
 	}
@@ -112,5 +169,10 @@ public class GSVideoCartridge extends PRGFile {
 	@Override
 	protected String getMediumName(final String fileName) {
 		return fileName + ".crt";
+	}
+	
+	@Override
+	protected int getStreamBase() {
+		return 0x8000;
 	}
 }

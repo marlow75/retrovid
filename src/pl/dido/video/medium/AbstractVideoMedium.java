@@ -1,6 +1,9 @@
 package pl.dido.video.medium;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import pl.dido.image.utils.Utils;
@@ -8,42 +11,47 @@ import pl.dido.video.compression.Compression;
 import pl.dido.video.utils.MarkableByteArrayOutputStream;
 
 public abstract class AbstractVideoMedium implements VideoMedium {
-	
-	protected final MarkableByteArrayOutputStream out;
+	protected final MarkableByteArrayOutputStream mediumStream;
 
 	protected final Compression compression;
-	protected int size;
+	protected int mediumSize;
 
 	protected int framesCounterMark;
-	protected int grabbedFrames;
+	protected int streamAddressMark;
 	
+	protected int grabbedFrames;
 	protected String fileName;
 	
 	public AbstractVideoMedium(final Compression compression) throws IOException {
 		this.compression = compression;
-		out = new MarkableByteArrayOutputStream(256 * 1024);
-
-		size += saveLoader(getLoaderName());
+		
+		mediumStream = new MarkableByteArrayOutputStream(256 * 1024);
+		mediumSize += savePlayer();
+		
+		// update stream address
+		final int address = mediumSize + getStreamBase();
+		mediumStream.setShortAtMarkedPosition(streamAddressMark, address);
+		
+		mediumStream.flush();
 	}
 	
-	public int saveLoader(final String fileName) throws IOException {
-		int sum = 0;
+	public int savePlayer() throws IOException {
+		int sum = 0, data;
 		BufferedInputStream in = null;
 
 		try {
-			in = new BufferedInputStream(Utils.getResourceAsStream(fileName, AbstractVideoMedium.class), 8192);
+			in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class), 8192);
 
-			int data;
 			in.read(); // skip loading address
 			in.read();
-
+			
 			while ((data = in.read()) != -1) {
-				out.write(data);
+				mediumStream.write(data);
 				sum++;
 			}
-
-			reserveSpaceForFramesCounter();
-			sum += 2;
+			
+			sum += reserveSpaceForFramesCounter();
+			sum += reserveSpaceForStreamAddress();
 		} finally {
 			in.close();
 		}
@@ -51,20 +59,51 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		return sum;
 	}
 	
+	public void createMedium(final String fileName) {
+		this.fileName = fileName;
+		BufferedOutputStream prg = null;
+		
+		try {
+			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
+			// update frames counter
+			mediumStream.setByteAtMarkedPosition(framesCounterMark, (byte) (grabbedFrames - 1));
+			writeVideoStream(prg);
+		} catch(final IOException ex) {
+			System.out.println("Can't create PRG file !!!");
+		} finally {
+			if (prg != null)
+			try {
+				prg.flush();
+				prg.close();
+			} catch (final IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	protected int reserveSpaceForStreamAddress() {
+		streamAddressMark = mediumStream.size();
+		
+		mediumStream.write(0x0);
+		mediumStream.write(0x0);
+		
+		return 2;
+	}
+
 	public void saveKeyFrame(final int background, final int[] screen, final int[] nibble) {
-		final int frameHeaderSize = writeFrameHeader();
-		out.write(background); // background color
+		final int frameHeaderSize = writeFrameSound();
+		mediumStream.write(background); // background color
 
 		// screen
 		for (int i = 0; i < 1000; i++)
-			out.write(screen[i]);
+			mediumStream.write(screen[i]);
 
 		// nibbles
 		final int bytes[] = compression.packNibble(nibble);
 		for (int i = 0; i < 500; i++)
-			out.write(bytes[i]);
+			mediumStream.write(bytes[i]);
 
-		size += 1500 + frameHeaderSize;
+		mediumSize += 1500 + frameHeaderSize;
 		grabbedFrames++;
 	}
 	
@@ -72,9 +111,9 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		final int compressedScreen[] = compression.compress(oldScreen, oldNibble, screen, nibble);
 		
 		final int compressedLen = compressedScreen.length;
-		final int len = compressedLen + getFrameHeaderSize() + 1;
+		final int len = compressedLen + getFrameSoundSize() + 1; // +1 background
 
-		if (size + len > getMaxSize()) // +1 background
+		if (mediumSize + len > getMaxSize()) 
 			return false;
 
 		if (!compression.checkSize(compressedScreen))
@@ -86,20 +125,27 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 			if (oldScreen[i] != screen[i])
 				throw new RuntimeException("Invalid compression");
 		
-		writeFrameHeader();
-		out.write(background);
+		writeFrameSound();
+		mediumStream.write(background);
 		
 		for (int i = 0; i < compressedLen; i++)
-			out.write(compressedScreen[i]);
+			mediumStream.write(compressedScreen[i]);
 
-		size += len;
+		mediumSize += len;
 		grabbedFrames++;
 		
 		return true;
 	}
-
-	protected abstract int getFrameHeaderSize();
-	protected abstract int writeFrameHeader();
+	
+	protected abstract int getFrameSoundSize();
+	protected abstract int writeFrameSound();
+	
 	protected abstract int reserveSpaceForFramesCounter();
-	protected abstract String getLoaderName();
+	protected abstract int reserveSpaceForAudio(); 
+	
+	protected abstract String getPlayerFileName();
+	protected abstract int getStreamBase();
+	
+	protected abstract String getMediumName(final String fileName);
+	protected abstract void writeVideoStream(final BufferedOutputStream prg) throws IOException;
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import at.fhtw.ai.nn.utils.NetworkProgressListener;
 import pl.dido.image.utils.neural.Position;
-
 import pl.dido.image.utils.BitVector;
 
 public class SOMCharsetNetwork {
@@ -29,10 +28,10 @@ public class SOMCharsetNetwork {
 		listeners.add(listener);
 	}
 
-	public void notifyListeners() {
+	public void notifyListeners(final String msg) {
 		if (listeners != null)
 			for (final NetworkProgressListener listener : listeners)
-				listener.notifyProgress();
+				listener.notifyProgress(msg);
 	}
 
 	protected void matrixInit() {
@@ -65,7 +64,7 @@ public class SOMCharsetNetwork {
 			}
 
 			radius -= delta_radius;
-			notifyListeners();
+			notifyListeners(String.valueOf(epoch));
 		}
 
 		final byte result[] = new byte[width * height * 8];

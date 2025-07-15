@@ -10,6 +10,8 @@ import java.awt.SystemColor;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
@@ -34,12 +36,9 @@ import pl.dido.video.petscii.PetsciiVideoGui;
 import pl.dido.video.supercpu.SupercpuVideoConfig;
 import pl.dido.video.supercpu.SupercpuVideoGui;
 import pl.dido.video.utils.GuiUtils;
+import pl.dido.video.utils.VideoConfig;
 import pl.dido.video.utils.VideoGui;
 import pl.dido.video.utils.VideoPanel;
-import pl.dido.video.utils.VideoConfig;
-
-import pl.dido.video.ascii.AsciiVideoConfig;
-import pl.dido.video.ascii.AsciiVideoGui;
 
 public class RetroVID {
 	protected String default_path;
@@ -81,14 +80,12 @@ public class RetroVID {
 		final Button btnLoad = new Button("Load file...");
 		tabs[0] = new PetsciiVideoGui(frame, new PetsciiVideoConfig());
 		tabs[1] = new SupercpuVideoGui(frame, new SupercpuVideoConfig());
-		tabs[2] = new AsciiVideoGui(frame, new AsciiVideoConfig());
-		tabs[3] = new AboutVideoGui();
+		tabs[2] = new AboutVideoGui();
 		
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		tabbedPane.addTab("C64 PETSCII", null, tabs[0].getTab(), null);
 		tabbedPane.addTab("Super CPU CHARSET", null, tabs[1].getTab(), null);
-		tabbedPane.addTab("PC CGA", null, tabs[2].getTab(), null);
-		tabbedPane.addTab("About", null, tabs[3].getTab(), null);
+		tabbedPane.addTab("About", null, tabs[2].getTab(), null);
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent changeEvent) {
@@ -131,13 +128,11 @@ public class RetroVID {
 						labelTable.put(mid, new JLabel(Integer.toString(mid) + "s"));
 						labelTable.put(end, new JLabel(Integer.toString(end) + "s"));
 
-						config.startFrame = 0;
+						config.startVideoFrame = 0;
 
-						tab.setSlider(end, labelTable);
 						tab.enablePlay(true);
 						tab.enableRecord(true);
-
-						tab.displaySingleFrame();
+						tab.setSlider(end, labelTable);
 					} catch (final Exception ex) {
 						ex.printStackTrace();
 					}
@@ -165,5 +160,12 @@ public class RetroVID {
 				System.exit(0);
 			}
 		});
+		
+		frame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(final ComponentEvent e) {
+                frame.repaint();
+            }
+        });
 	}
 }

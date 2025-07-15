@@ -4,14 +4,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import pl.dido.image.petscii.PetsciiConfig;
-import pl.dido.image.petscii.PetsciiConfig.NETWORK;
 import pl.dido.image.petscii.PetsciiRenderer;
+import pl.dido.image.utils.Config.FILTER;
 import pl.dido.video.petscii.PetsciiVideoConfig.COMPRESSION;
 import pl.dido.video.petscii.PetsciiVideoConfig.MEDIUM_TYPE;
 import pl.dido.video.utils.GuiUtils;
@@ -111,42 +115,48 @@ public class PetsciiVideoGui extends VideoGui {
 		groupMedium.add(rdbtnCodesButton);
 		panel.add(rdbtnCodesButton);
 
-		final JLabel lblConvertLabel = new JLabel("Converter mode:");
+		final PetsciiConfig petsciiConfig = ((PetsciiConfig) petsciiVideoConfig.config);
+		
+		final JLabel lblConvertLabel = new JLabel("lowpass threshold:");
 		lblConvertLabel.setFont(GuiUtils.bold);
-		lblConvertLabel.setBounds(20, 125, 169, 14);
+		lblConvertLabel.setBounds(20, 125, 100, 14);
 		panel.add(lblConvertLabel);
 		
-		final PetsciiConfig petsciiConfig = ((PetsciiConfig) petsciiVideoConfig.config);
+		final JSlider sldDetect = new JSlider(JSlider.HORIZONTAL, 0, 4, (int) petsciiConfig.lowpass_gain);
+		sldDetect.setBounds(40, 146, 100, 35);
+		sldDetect.setFont(GuiUtils.std);
+		sldDetect.addChangeListener(new ChangeListener() {
+			public void stateChanged(final ChangeEvent e) {
+				final JSlider source = (JSlider) e.getSource();
 
-		final JRadioButton rdbtnL1Button = new JRadioButton("Semigraphics");
-		rdbtnL1Button.setToolTipText("Prefers semigraphic");
-		rdbtnL1Button.setFont(GuiUtils.std);
-		rdbtnL1Button.setBounds(46, 142, 150, 23);
-		rdbtnL1Button.setSelected(petsciiConfig.network == NETWORK.L1);
-		rdbtnL1Button.addActionListener(new ActionListener() {
+				if (!source.getValueIsAdjusting()) {
+					final int value = source.getValue();
+					if (value != 0) {
+					    petsciiConfig.filter = FILTER.LOWPASS;
+						petsciiConfig.lowpass_gain = value;
+					} else
+						petsciiConfig.filter = FILTER.NONE;
+				}
+			}
+		});
+		
+		sldDetect.setMajorTickSpacing(2);
+		sldDetect.setPaintLabels(true);
+		panel.add(sldDetect);
+		
+		final JCheckBox chckbxDenoiseCheckBox = new JCheckBox("denoising filter");
+		chckbxDenoiseCheckBox.setToolTipText("Neural denoise filter (simple autoencoder)");
+		chckbxDenoiseCheckBox.setFont(GuiUtils.std);
+		chckbxDenoiseCheckBox.setBounds(150, 156, 150, 20);
+		chckbxDenoiseCheckBox.setSelected(petsciiConfig.denoise);
+
+		chckbxDenoiseCheckBox.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				petsciiConfig.network = NETWORK.L1;
+				config.denoise = !config.denoise;
 			}
 		});
 
-		panel.add(rdbtnL1Button);
-
-		final JRadioButton rdbtnL2Button = new JRadioButton("Characters");
-		rdbtnL2Button.setToolTipText("Prefers characters");
-		rdbtnL2Button.setFont(GuiUtils.std);
-		rdbtnL2Button.setBounds(46, 162, 150, 23);
-		rdbtnL2Button.setSelected(petsciiConfig.network == NETWORK.L2);
-		rdbtnL2Button.addActionListener(new ActionListener() {
-			public void actionPerformed(final ActionEvent e) {
-				petsciiConfig.network = NETWORK.L2;
-			}
-		});
-
-		panel.add(rdbtnL2Button);
-
-		final ButtonGroup groupResolution = new ButtonGroup();
-		groupResolution.add(rdbtnL1Button);
-		groupResolution.add(rdbtnL2Button);
+		panel.add(chckbxDenoiseCheckBox);
 
 		GuiUtils.addContrastControls(panel, petsciiVideoConfig.config);
 		return panel;

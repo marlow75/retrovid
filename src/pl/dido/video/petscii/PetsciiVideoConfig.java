@@ -4,6 +4,7 @@ import java.io.File;
 
 import pl.dido.image.petscii.PetsciiConfig;
 import pl.dido.image.utils.Config.DITHERING;
+import pl.dido.image.utils.Config.FILTER;
 import pl.dido.video.utils.VideoConfig;
 
 public class PetsciiVideoConfig extends VideoConfig {
@@ -16,17 +17,16 @@ public class PetsciiVideoConfig extends VideoConfig {
 
 	public File selectedFile;	
 	public int startFrame;
-	public int frameRate;
 	
 	public PetsciiVideoConfig() {
 		super(new PetsciiConfig());
 		
 		compression = COMPRESSION.CODES_COLOR;
-		mediumType = MEDIUM_TYPE.CRT_SND;
+		mediumType = MEDIUM_TYPE.CRT;
 		
-		this.config.dither_alg = DITHERING.NONE;
-		this.config.pal_view = false;
+		config.dither_alg = DITHERING.NONE;
+		config.pal_view = false;
 		
-		this.config.low_pass_filter = true;
+		config.filter = FILTER.LOWPASS;
 	}
 }

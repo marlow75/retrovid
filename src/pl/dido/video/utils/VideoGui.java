@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Hashtable;
+import java.util.concurrent.CancellationException;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,7 +30,6 @@ import pl.dido.image.utils.Gfx;
 import pl.dido.video.petscii.PetsciiGrabberTask;
 
 public abstract class VideoGui implements ActionListener, PropertyChangeListener, VideoPanel {
-	
 	protected FFmpegFrameGrabber grabber;
 	
 	protected VideoCanvas movie;
@@ -103,16 +103,16 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			public void stateChanged(final ChangeEvent e) {
 				final JSlider source = (JSlider) e.getSource();
 
-				if (!source.getValueIsAdjusting())
-					config.startFrame = source.getValue() * config.frameRate;
-
-				displaySingleFrame();
+				if (!source.getValueIsAdjusting()) {
+					config.startVideoFrame = source.getValue() * config.frameRate;
+					displaySingleFrame();
+				}
 			}
 		});
 
 		btnPlay.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				playFragment(2); // 2 seconds
+				playFragment(10); // 10 seconds
 			}
 		});
 
@@ -142,6 +142,8 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 					if (result == PetsciiGrabberTask.IO_ERROR) 	
 						JOptionPane.showMessageDialog(null, "ERROR", "IO error !!!", JOptionPane.ERROR_MESSAGE);
 					
+				} catch (final CancellationException ex) {
+					System.out.println("Conversion cancelled.");
 				} catch (final Exception e) {
 					e.printStackTrace();
 				} finally {
@@ -170,9 +172,9 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			try {
 				grabber.close();
 				grabber.start();
-				grabber.setFrameNumber(config.startFrame);
+				grabber.setFrameNumber(config.startVideoFrame);
 				
-				frame2ascii(renderer);
+				frame2Ascii(renderer);
 			} catch (final Exception ex) {
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(null, "ERROR", "Can't display single fragment !!!",
@@ -183,10 +185,11 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 	private void playFragment(final int time) {
 		try {
 			converterButtons(false);
+			
 			grabber.close();
 			grabber.start();
 			
-			final int start = config.startFrame;
+			final int start = config.startVideoFrame;
 			int end = (int) (start + time * config.frameRate);
 			final int len = grabber.getLengthInFrames();
 
@@ -194,7 +197,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			grabber.setFrameNumber(start);
 			
 			for (int i = start; i < end; i++)
-				frame2ascii(renderer); // slide show
+				frame2Ascii(renderer); // slide show
 
 		} catch (final Exception ex) {
 			JOptionPane.showMessageDialog(null, "ERROR", "Can't play fragment !!!", JOptionPane.ERROR_MESSAGE);
@@ -227,11 +230,10 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		return frame;
 	}
 	
-	private void frame2ascii(final AbstractRenderer renderer) {
-		Frame frame = getFrame();
+	private void frame2Ascii(final AbstractRenderer renderer) {
+		final Frame frame = getFrame();
 
 		try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
-			
 			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.config.getScreenWidth(), config.config.getScreenHeight()));
 			renderer.imageProcess();
 

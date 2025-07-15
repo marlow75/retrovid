@@ -11,7 +11,7 @@ public class VideoCanvas extends Canvas {
 	
 	public void setImage(final BufferedImage img) {
 		this.img = img;
-		createBufferStrategy(2);
+		createBufferStrategy(1);
 	}
 	
 	public void showImage() {
@@ -24,13 +24,14 @@ public class VideoCanvas extends Canvas {
 	}
 	
 	@Override
-	public void paint(final Graphics g) {
-		super.paint(g);
+	public void paint(final Graphics gfx) {
+		super.paint(gfx);
 
 		if (img != null) {
 			final int x = (getWidth() - img.getWidth()) / 2;
 			final int y = (getHeight() - img.getHeight()) / 2;
-			g.drawImage(img, x, y, this);
+			
+			gfx.drawImage(img, x, y, this);
 		}
 	}
 }

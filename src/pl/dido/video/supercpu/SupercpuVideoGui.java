@@ -4,11 +4,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
+import pl.dido.image.petscii.PetsciiConfig;
 import pl.dido.video.petscii.PetsciiVideoConfig.COMPRESSION;
 import pl.dido.video.petscii.PetsciiVideoConfig.MEDIUM_TYPE;
 import pl.dido.video.utils.GuiUtils;
@@ -94,6 +99,44 @@ public class SupercpuVideoGui extends VideoGui {
 		groupMedium.add(rdbtColorButton);
 		groupMedium.add(rdbtnCodesButton);
 		panel.add(rdbtnCodesButton);
+		
+        final PetsciiConfig petsciiConfig = ((PetsciiConfig) petsciiVideoConfig.config);
+		
+		final JLabel lblConvertLabel = new JLabel("lowpass threshold:");
+		lblConvertLabel.setFont(GuiUtils.bold);
+		lblConvertLabel.setBounds(20, 125, 100, 14);
+		panel.add(lblConvertLabel);
+		
+		final JSlider sldDetect = new JSlider(JSlider.HORIZONTAL, 0, 4, (int) petsciiConfig.lowpass_gain);
+		sldDetect.setBounds(40, 146, 100, 35);
+		sldDetect.setFont(GuiUtils.std);
+		sldDetect.addChangeListener(new ChangeListener() {
+			public void stateChanged(final ChangeEvent e) {
+				final JSlider source = (JSlider) e.getSource();
+
+				if (!source.getValueIsAdjusting())
+					petsciiConfig.lowpass_gain = source.getValue();
+			}
+		});
+		
+		sldDetect.setMajorTickSpacing(2);
+		sldDetect.setPaintLabels(true);
+		panel.add(sldDetect);
+		
+
+		final JCheckBox chckbxDenoiseCheckBox = new JCheckBox("denoising filter");
+		chckbxDenoiseCheckBox.setToolTipText("NN denoise filter (simple autoencoder)");
+		chckbxDenoiseCheckBox.setFont(GuiUtils.std);
+		chckbxDenoiseCheckBox.setBounds(150, 156, 150, 20);
+		chckbxDenoiseCheckBox.setSelected(petsciiConfig.denoise);
+
+		chckbxDenoiseCheckBox.addActionListener(new ActionListener() {
+			public void actionPerformed(final ActionEvent e) {
+				config.denoise = !config.denoise;
+			}
+		});
+
+		panel.add(chckbxDenoiseCheckBox);
 				
 		GuiUtils.addContrastControls(panel, config.config);
 		return panel;

@@ -14,12 +14,12 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
+import at.fhtw.ai.nn.utils.Dataset;
 import at.fhtw.ai.nn.utils.HL1SoftmaxNetwork;
 import at.fhtw.ai.nn.utils.Network;
 import at.fhtw.ai.nn.utils.NetworkProgressListener;
-import at.fhtw.ai.nn.utils.Dataset;
 import pl.dido.image.utils.BitVector;
-
+import pl.dido.image.utils.Config;
 import pl.dido.image.utils.Config.NEAREST_COLOR;
 import pl.dido.image.utils.Gfx;
 import pl.dido.image.utils.neural.NNUtils;
@@ -39,7 +39,7 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 
 	protected final SOMCharsetNetwork som;
 	protected Network neural;
-	
+
 	protected int progress;
 	protected byte charset[];
 
@@ -49,18 +49,22 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 		som = new SOMCharsetNetwork(16, 16);
 		som.addProgressListener(this);
 
-		neural = new HL1SoftmaxNetwork(64, 128, 256);
-		neural.addProgressListener(this);
-		
 		progress = 0;
 	}
-	
+
 	protected SupercpuRenderer getRenderer() {
-		return new SupercpuRenderer(config.config);
+		// grabbing with denoiser
+		try {
+			final Config cfg = (Config) config.config.clone();
+			cfg.denoise = config.denoise;
+
+			return new SupercpuRenderer(cfg);
+		} catch (final Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
-	protected SOMDataset getChars(final byte pixels[], final NEAREST_COLOR colorAlg)
-			throws IOException {
+	protected SOMDataset getChars(final byte pixels[], final NEAREST_COLOR colorAlg) throws IOException {
 		final SOMDataset dataset = new SOMDataset();
 
 		// tiles screen and pattern
@@ -76,8 +80,7 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 			nb = pixels[i + 2] & 0xff;
 
 			// dimmer better
-			occurrence[Gfx.getColorIndex(colorAlg, renderer.palette, nr, ng, nb)] += (255
-					- Gfx.getLuma(nr, ng, nb));
+			occurrence[Gfx.getColorIndex(colorAlg, renderer.palette, nr, ng, nb)] += (255 - Gfx.getLuma(nr, ng, nb));
 		}
 
 		// get background color with maximum occurrence
@@ -163,8 +166,8 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 			throws IOException {
 		final SOMDataset dataset = new SOMDataset();
 		final Java2DFrameConverter con = new Java2DFrameConverter();
+		
 		int frames = 0;
-
 		while (frames < MAX_FRAMES) {
 			Frame frame = frameGrabber.grabFrame(false, true, true, true);
 
@@ -195,7 +198,6 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 	@Override
 	protected Medium getMedium() throws IOException {
 		final Compression compression;
-		
 		SupercpuVideoConfig charsetVideoConfig = (SupercpuVideoConfig) config;
 
 		switch (charsetVideoConfig.compression) {
@@ -221,19 +223,22 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 		final FFmpegFrameGrabber frameGrabber = new FFmpegFrameGrabber(config.selectedFile);
 		frameGrabber.start();
 
-		frameGrabber.setFrameNumber(config.startFrame);
+		frameGrabber.setFrameNumber(config.startVideoFrame);
 		final SOMDataset dataset = grabKeyFrames(config.selectedFile.getName(), frameGrabber);
 		charset = som.train(dataset);
-		
+
 		if (log.isLoggable(Level.FINEST)) {
-			Files.write(Path.of("charset.bin"), charset);		
-			
+			Files.write(Path.of("charset.bin"), charset);
 			log.finest("Charset saved.");
 		}
-		
-		final Vector<Dataset> samples = NNUtils.loadData(new ByteArrayInputStream(charset));
+
+		final Vector<Dataset> samples = NNUtils.loadData8x8(new ByteArrayInputStream(charset));
+
+		final Network neural = new HL1SoftmaxNetwork(64, 32, 256);
 		neural.train(samples);
+
 		((SupercpuRenderer) renderer).setNeural(neural);
+		((SupercpuRenderer) renderer).setCharset(charset);
 	}
 
 	@Override
@@ -252,7 +257,7 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 	}
 
 	@Override
-	public void notifyProgress() {
+	public void notifyProgress(final String msg) {
 		setProgress(progress++ % 100);
 	}
 }
