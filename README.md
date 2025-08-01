@@ -34,7 +34,7 @@ Medium
 
 - PRG - C64 program, simply type RUN command in BASIC
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minutes long
-- CRT audio - Game System C64 cartridge with 4,41 kHz digitized sound. Playback can by jazzy, fast scenes requires more CPU power.
+- CRT audio - Game System C64 cartridge with 5,512 kHz digitized sound. Playback can by jazzy, fast scenes requires more CPU power.
  
 Compression mode
 
@@ -65,7 +65,7 @@ New method with neural net learns new charset definitions. Movie key frames are 
 Medium
 
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minuts long
-- CRT audio - Game System C64 cartridge with 4,41 kHz digitized sound with simple low band filter 2,205 kHz cutoff
+- CRT audio - Game System C64 cartridge with 5,512 kHz digitized sound with simple low band filter cutoff
  
 same conversion options.
 
