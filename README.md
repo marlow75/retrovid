@@ -20,7 +20,6 @@ Videos with 24 frames per seconds are recommended. C64 timings are very tight, a
 * download libs directory and put JAVACV library there, without JAVACV CONVERTER WON'T WORK !!!
 
 Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that. Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
-
 Just type <b>java -jar retropic.jar</b> and do not close console window.
 
 CRT directory contains cartridge examples, 512kb clips
@@ -44,7 +43,7 @@ Compression mode
 
 Sound options
 
-- lowpass filter - simple filter with 5,512 kHz cut off
+- lowpass filter - simple filter with 5,512 kHz cutoff
 - TPDF - triangle propability function used by dithering sound downsampling, unchecked means rectangle function.
 
 Video filters
