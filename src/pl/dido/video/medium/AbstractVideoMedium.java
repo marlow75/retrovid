@@ -1,9 +1,6 @@
 package pl.dido.video.medium;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import pl.dido.image.utils.Utils;
@@ -18,38 +15,39 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 
 	protected int framesCounterMark;
 	protected int streamAddressMark;
-	
+
 	protected int grabbedFrames;
 	protected String fileName;
-	
+
 	public AbstractVideoMedium(final Compression compression) throws IOException {
 		this.compression = compression;
-		
+
 		mediumStream = new MarkableByteArrayOutputStream(256 * 1024);
 		mediumSize += savePlayer();
-		
+
 		// update stream address
 		final int address = mediumSize + getStreamBase();
 		mediumStream.setShortAtMarkedPosition(streamAddressMark, address);
-		
+
 		mediumStream.flush();
 	}
-	
+
 	public int savePlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 
 		try {
-			in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class), 8192);
+			in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class),
+					8192);
 
 			in.read(); // skip loading address
 			in.read();
-			
+
 			while ((data = in.read()) != -1) {
 				mediumStream.write(data);
 				sum++;
 			}
-			
+
 			sum += reserveSpaceForFramesCounter();
 			sum += reserveSpaceForStreamAddress();
 		} finally {
@@ -58,35 +56,21 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 
 		return sum;
 	}
-	
+
 	public void createMedium(final String fileName) {
 		this.fileName = fileName;
-		BufferedOutputStream prg = null;
 		
-		try {
-			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
-			// update frames counter
-			mediumStream.setByteAtMarkedPosition(framesCounterMark, (byte) (grabbedFrames - 1));
-			writeVideoStream(prg);
-		} catch(final IOException ex) {
-			System.out.println("Can't create PRG file !!!");
-		} finally {
-			if (prg != null)
-			try {
-				prg.flush();
-				prg.close();
-			} catch (final IOException e) {
-				e.printStackTrace();
-			}
-		}
+		// update frames counter
+		mediumStream.setByteAtMarkedPosition(framesCounterMark, (byte) (grabbedFrames - 1));
+		writeVideoStream(fileName);
 	}
-	
+
 	protected int reserveSpaceForStreamAddress() {
 		streamAddressMark = mediumStream.size();
-		
+
 		mediumStream.write(0x0);
 		mediumStream.write(0x0);
-		
+
 		return 2;
 	}
 
@@ -106,14 +90,14 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		mediumSize += 1500 + frameHeaderSize;
 		grabbedFrames++;
 	}
-	
+
 	public boolean saveFrame(int background, int[] oldScreen, int[] oldNibble, int[] screen, int[] nibble) {
 		final int compressedScreen[] = compression.compress(oldScreen, oldNibble, screen, nibble);
-		
+
 		final int compressedLen = compressedScreen.length;
 		final int len = compressedLen + getFrameSoundSize() + 1; // +1 background
 
-		if (mediumSize + len > getMaxSize()) 
+		if (mediumSize + len > getMaxSize())
 			return false;
 
 		if (!compression.checkSize(compressedScreen))
@@ -124,28 +108,32 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		for (int i = 0; i < 1000; i++)
 			if (oldScreen[i] != screen[i])
 				throw new RuntimeException("Invalid compression");
-		
+
 		writeFrameSound();
 		mediumStream.write(background);
-		
+
 		for (int i = 0; i < compressedLen; i++)
 			mediumStream.write(compressedScreen[i]);
 
 		mediumSize += len;
 		grabbedFrames++;
-		
+
 		return true;
 	}
-	
+
 	protected abstract int getFrameSoundSize();
+
 	protected abstract int writeFrameSound();
-	
+
 	protected abstract int reserveSpaceForFramesCounter();
-	protected abstract int reserveSpaceForAudio(); 
-	
+
+	protected abstract int reserveSpaceForAudio();
+
 	protected abstract String getPlayerFileName();
+
 	protected abstract int getStreamBase();
-	
+
 	protected abstract String getMediumName(final String fileName);
-	protected abstract void writeVideoStream(final BufferedOutputStream prg) throws IOException;
+
+	protected abstract void writeVideoStream(final String fileName);
 }

@@ -59,11 +59,14 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 			if (medium instanceof AudioMedium) {
 				frameGrabber.start();
 				
-				final int timestamp = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate());
-				final int startAudioFrame = (int) (timestamp * frameGrabber.getAudioFrameRate());
+				final int startTime = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate());
+				final int stopTime = (int) (((config.startVideoFrame + grabbedFrames) * config.getSkipFrameRate()) / frameGrabber.getVideoFrameRate());
 				
+				final int startAudioFrame = (int) (startTime * frameGrabber.getAudioFrameRate());
+				final int stopAudioFrame = (int) (stopTime * frameGrabber.getAudioFrameRate());
+
 				frameGrabber.setAudioFrameNumber(startAudioFrame);
-				grabAudio(frameGrabber, medium);
+				grabAudio(frameGrabber, medium, stopAudioFrame);
 				
 				frameGrabber.stop();
 			}
@@ -93,7 +96,7 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 		}
 	}
 
-	protected abstract void grabAudio(final FFmpegFrameGrabber frameGrabber, final VideoMedium medium) throws Exception;
+	protected abstract void grabAudio(final FFmpegFrameGrabber frameGrabber, final VideoMedium medium, final int stopAudioFrame) throws Exception;
 	protected abstract int grabVideo(final String fileName, final FFmpegFrameGrabber frameGrabber,
 			final VideoMedium medium) throws Exception;
 

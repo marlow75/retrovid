@@ -11,56 +11,56 @@ import pl.dido.video.compression.Compression;
 
 public class GSVideoCartridge extends PRGFile {
 	protected final int BANK_SIZE = 8192;
-	
+
 	public GSVideoCartridge(final Compression compression) throws IOException {
 		super(compression);
 	}
-	
+
 	@Override
 	public void createMedium(final String fileName) {
-		this.fileName = fileName;
-		BufferedOutputStream prg = null;
+		this.fileName = fileName; // update frames counter
 		
-		try {
-			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
-			// update frames counter
-			mediumStream.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
-			writeVideoStream(prg);
-		} catch(final IOException ex) {
-			System.out.println("Can't create CRT file !!!");
-		} finally {
-			if (prg != null)
-			try {
-				prg.flush();
-				prg.close();
-			} catch (final IOException e) {
-				e.printStackTrace();
-			}
-		}
+		mediumStream.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
+		writeVideoStream(fileName);
 	}
-	
+
 	@Override
-	public void writeVideoStream(final BufferedOutputStream prg) throws IOException {
+	public void writeVideoStream(final String fileName) {
 		final byte bytes[] = mediumStream.toByteArray();
 		final int dataLen = bytes.length;
-		
-		prg.write(getHeader());
-		
-		int i = 0;
-		byte bank = 0;
-		
-		for (i = 0; i < dataLen; i++) {
-			if (i % BANK_SIZE == 0)
-				// block size reached
-				prg.write(getChipHeader(bank++));
 
-			prg.write(bytes[i]);
+		BufferedOutputStream prg = null;
+		try {
+			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
+			prg.write(getHeader());
+
+			int i = 0;
+			byte bank = 0;
+
+			for (i = 0; i < dataLen; i++) {
+				if (i % BANK_SIZE == 0)
+					// block size reached
+					prg.write(getChipHeader(bank++));
+
+				prg.write(bytes[i]);
+			}
+
+			while (i++ % BANK_SIZE != 0)
+				prg.write(-1);
+
+		} catch (final IOException ex) {
+			System.out.println("Can't create PRG file !!!");
+		} finally {
+			if (prg != null)
+				try {
+					prg.flush();
+					prg.close();
+				} catch (final IOException e) {
+					e.printStackTrace();
+				}
 		}
-
-		while (i++ % BANK_SIZE != 0)
-			prg.write(-1);
 	}
-	
+
 	@Override
 	public int savePlayer() throws IOException {
 		int sum = 0, data;
@@ -68,28 +68,30 @@ public class GSVideoCartridge extends PRGFile {
 
 		try {
 			try {
-				in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class), 8192);
+				in = new BufferedInputStream(Utils.getResourceAsStream(getPlayerFileName(), AbstractVideoMedium.class),
+						8192);
 
 				in.read(); // skip loading address
 				in.read();
-				
+
 				while ((data = in.read()) != -1) {
 					mediumStream.write(data);
 					sum++;
 				}
-				
+
 			} finally {
 				in.close();
 			}
-			
-			in = new BufferedInputStream(Utils.getResourceAsStream(getExtendedFileName(), AbstractVideoMedium.class), 8192);
+
+			in = new BufferedInputStream(Utils.getResourceAsStream(getExtendedFileName(), AbstractVideoMedium.class),
+					8192);
 			in.read(); // skip loading address
 			in.read();
 
 			while ((data = in.read()) != -1) {
 				mediumStream.write(data);
 				sum++;
-			}			
+			}
 
 			sum += reserveSpaceForFramesCounter();
 			sum += reserveSpaceForStreamAddress();
@@ -142,35 +144,36 @@ public class GSVideoCartridge extends PRGFile {
 
 		return p;
 	}
-	
+
 	@Override
 	protected int reserveSpaceForFramesCounter() {
 		framesCounterMark = mediumStream.size(); // frames 0-65535
-		mediumStream.write(0x0);
-		mediumStream.write(0x0);
 		
+		mediumStream.write(0x0);
+		mediumStream.write(0x0);
+
 		return 2;
 	}
-	
+
 	@Override
 	protected String getPlayerFileName() {
 		return "cart-loader.prg";
 	}
-	
+
 	protected String getExtendedFileName() {
 		return "cart-player.prg";
 	}
-	
+
 	@Override
 	public int getMaxSize() {
 		return 512 * 1024; // 512kb
 	}
-	
+
 	@Override
 	protected String getMediumName(final String fileName) {
 		return fileName + ".crt";
 	}
-	
+
 	@Override
 	protected int getStreamBase() {
 		return 0x8000;

@@ -234,7 +234,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		final Frame frame = getFrame();
 
 		try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
-			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.config.getScreenWidth(), config.config.getScreenHeight()));
+			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.petsciiConfig.getScreenWidth(), config.petsciiConfig.getScreenHeight()));
 			renderer.imageProcess();
 
 			movie.setImage(Gfx.scaleWithStretching(renderer.getImage(), 320, 200));

@@ -24,9 +24,9 @@ public class PetsciiVideoConfig extends VideoConfig {
 		compression = COMPRESSION.CODES_COLOR;
 		mediumType = MEDIUM_TYPE.CRT;
 		
-		config.dither_alg = DITHERING.NONE;
-		config.pal_view = false;
+		petsciiConfig.dither_alg = DITHERING.NONE;
+		petsciiConfig.pal_view = false;
 		
-		config.filter = FILTER.LOWPASS;
+		petsciiConfig.filter = FILTER.EDGES_BLEND;
 	}
 }

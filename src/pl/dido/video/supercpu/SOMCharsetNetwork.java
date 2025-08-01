@@ -12,7 +12,7 @@ public class SOMCharsetNetwork {
 	protected int width, height;
 
 	protected float radius = 0.4f;
-	protected int epoch = 10;
+	protected int epoch = 20;
 
 	protected ArrayList<NetworkProgressListener> listeners;
 

@@ -17,53 +17,74 @@ import org.bytedeco.javacv.Java2DFrameConverter;
 import at.fhtw.ai.nn.utils.Dataset;
 import at.fhtw.ai.nn.utils.HL1SoftmaxNetwork;
 import at.fhtw.ai.nn.utils.Network;
-import at.fhtw.ai.nn.utils.NetworkProgressListener;
 import pl.dido.image.renderer.AbstractRenderer;
 import pl.dido.image.utils.BitVector;
 import pl.dido.image.utils.Config;
-import pl.dido.image.utils.Config.NEAREST_COLOR;
 import pl.dido.image.utils.Gfx;
+import pl.dido.image.utils.Config.NEAREST_COLOR;
 import pl.dido.image.utils.neural.NNUtils;
 import pl.dido.video.compression.CodesCompression;
 import pl.dido.video.compression.ColorsCodesCompression;
 import pl.dido.video.compression.Compression;
-import pl.dido.video.medium.GSAudioVideoCharsetCartridge;
-import pl.dido.video.medium.GSVideoCharsetCartridge;
+import pl.dido.video.medium.GSAudioVideo2CharsetCartridge;
+import pl.dido.video.medium.GSVideo2CharsetCartridge;
 import pl.dido.video.medium.Medium;
-import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
 
-public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkProgressListener {
+public class SupercpuGrabberTask2 extends SupercpuGrabberTask {
 
 	protected static final Logger log = Logger.getLogger(SupercpuGrabberTask.class.getName());
 	protected static final int MAX_FRAMES = 30;
 
-	protected final SOMCharsetNetwork som;
-	protected byte charset[];
-	
+	protected final SOMCharsetNetwork som2;
+	protected byte charset2[];
+
 	protected int progress;
 
-	public SupercpuGrabberTask(final PetsciiVideoConfig config) {
+	public SupercpuGrabberTask2(final PetsciiVideoConfig config) {
 		super(config);
 
-		som = new SOMCharsetNetwork(16, 16);
-		som.addProgressListener(this);
-
-		progress = 0;
+		som2 = new SOMCharsetNetwork(16, 16);
+		som2.addProgressListener(this);
 	}
 
 	@Override
 	protected AbstractRenderer getRenderer() {
 		try {
 			final Config cfg = (Config) config.petsciiConfig.clone();
-			return new SupercpuRenderer(cfg);
+			return new SupercpuRenderer2(cfg);
 		} catch (final Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}
 
-	protected SOMDataset getCharacterset(final byte pixels[], final NEAREST_COLOR colorAlg) throws IOException {
-		final SOMDataset dataset = new SOMDataset();
+	@Override
+	protected Medium getMedium() throws IOException {
+		final Compression compression;
+		SupercpuVideoConfig charsetVideoConfig = (SupercpuVideoConfig) config;
+
+		switch (charsetVideoConfig.compression) {
+		default:
+			compression = new CodesCompression();
+			break;
+		case CODES_COLOR:
+			compression = new ColorsCodesCompression();
+			break;
+		}
+
+		switch (charsetVideoConfig.mediumType) {
+		case CRT_SND:
+			return new GSAudioVideo2CharsetCartridge(compression, charset, charset2);
+		default:
+			return new GSVideo2CharsetCartridge(compression, charset, charset2);
+		}
+	}
+	
+	protected SOMDataset[] getCharacterset2(final byte pixels[], final NEAREST_COLOR colorAlg) throws IOException {
+		final SOMDataset dataset[] = new SOMDataset[2];
+		
+		dataset[0] = new SOMDataset();
+		dataset[1] = new SOMDataset();
 
 		// tiles screen and pattern
 		final int work[] = new int[64 * 3];
@@ -153,16 +174,23 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 							vec.set(y0 * 8 + x0);
 					}
 
-				dataset.add(vec);
+				if (y < 100)
+					dataset[0].add(vec);
+				else
+					dataset[1].add(vec);
 			}
 		}
-
+		
 		return dataset;
 	}
-
-	protected SOMDataset grabKeyFrames(final String fileName, final FFmpegFrameGrabber frameGrabber)
+	
+	protected SOMDataset[] grabKeyFrames2(final String fileName, final FFmpegFrameGrabber frameGrabber)
 			throws IOException {
-		final SOMDataset dataset = new SOMDataset();
+		final SOMDataset dataset[] = new SOMDataset[2];
+		
+		dataset[0] = new SOMDataset();
+		dataset[1] = new SOMDataset();
+
 		final Java2DFrameConverter con = new Java2DFrameConverter();
 		
 		int frames = 0;
@@ -174,12 +202,15 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 
 			if (frame.type == Frame.Type.VIDEO) {
 				renderer.setImage(con.convert(frame));
-				((SupercpuRenderer) renderer).setupPalette();
+				((SupercpuRenderer2) renderer).setupPalette();
 
 				final BufferedImage img = renderer.getImage();
-				dataset.addAll(getCharacterset(((DataBufferByte) img.getRaster().getDataBuffer()).getData(),
-						NEAREST_COLOR.PERCEPTED));
-
+				final SOMDataset result[] = getCharacterset2(((DataBufferByte) img.getRaster().getDataBuffer()).getData(),
+						NEAREST_COLOR.PERCEPTED);
+				
+				dataset[0].addAll(result[0]);
+				dataset[1].addAll(result[1]);
+				
 				frames++;
 				setProgress(progress++ % 100);
 			}
@@ -193,28 +224,6 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 		return dataset;
 	}
 
-	@Override
-	protected Medium getMedium() throws IOException {
-		final Compression compression;
-		SupercpuVideoConfig charsetVideoConfig = (SupercpuVideoConfig) config;
-
-		switch (charsetVideoConfig.compression) {
-		default:
-			compression = new CodesCompression();
-			break;
-		case CODES_COLOR:
-			compression = new ColorsCodesCompression();
-			break;
-		}
-
-		switch (charsetVideoConfig.mediumType) {
-		case CRT_SND:
-			return new GSAudioVideoCharsetCartridge(compression, charset);
-		default:
-			return new GSVideoCharsetCartridge(compression, charset);
-		}
-	}
-
 	public void prepareCharset() throws IOException {
 		setProgress(0);
 
@@ -222,39 +231,30 @@ public class SupercpuGrabberTask extends PetsciiGrabberTask implements NetworkPr
 		frameGrabber.start();
 
 		frameGrabber.setFrameNumber(config.startVideoFrame);
-		final SOMDataset dataset = grabKeyFrames(config.selectedFile.getName(), frameGrabber);
-		charset = som.train(dataset);
+		final SOMDataset datasets[] = grabKeyFrames2(config.selectedFile.getName(), frameGrabber);
+		
+		charset = som.train(datasets[0]);
+		charset2 = som2.train(datasets[1]);
 
 		if (log.isLoggable(Level.FINEST)) {
-			Files.write(Path.of("charset.bin"), charset);
-			log.finest("Charset saved.");
+			Files.write(Path.of("charset1.bin"), charset);
+			Files.write(Path.of("charset2.bin"), charset2);
+			log.finest("Charsets saved.");
 		}
 
-		final Vector<Dataset> samples = NNUtils.loadData8x8(new ByteArrayInputStream(charset));
-		final Network neural = new HL1SoftmaxNetwork(64, 32, 256);
-		neural.train(samples);
-		
-		((SupercpuRenderer) renderer).setNeural(neural);
-		((SupercpuRenderer) renderer).setCharset(charset);
-	}
+		final Vector<Dataset> samples1 = NNUtils.loadData8x8(new ByteArrayInputStream(charset));
+		final Vector<Dataset> samples2 = NNUtils.loadData8x8(new ByteArrayInputStream(charset2));
 
-	@Override
-	public Integer doInBackground() {
-		try {
-			Thread.sleep(500); // wait for gui frame
-			prepareCharset();
+		final Network neural1 = new HL1SoftmaxNetwork(64, 32, 256);
+		final Network neural2 = new HL1SoftmaxNetwork(64, 32, 256);
 
-			return convert();
-		} catch (final InterruptedException e) {
-			return CANCELLED;
-		} catch (final IOException e) {
-			e.printStackTrace();
-			return CANCELLED;
-		}
-	}
+		neural1.addProgressListener(this);
+		neural1.train(samples1);
 
-	@Override
-	public void notifyProgress(final String msg) {
-		setProgress(progress++ % 100);
+		neural2.addProgressListener(this);
+		neural2.train(samples2);
+
+		((SupercpuRenderer2) renderer).setNeurals(neural1, neural2);
+		((SupercpuRenderer2) renderer).setCharsets(charset, charset2);
 	}
 }

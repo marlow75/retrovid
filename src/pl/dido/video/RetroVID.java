@@ -29,10 +29,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 
+import pl.dido.image.petscii.PetsciiRenderer;
 import pl.dido.image.utils.Utils;
 import pl.dido.video.petscii.PetsciiGrabberTask;
 import pl.dido.video.petscii.PetsciiVideoConfig;
 import pl.dido.video.petscii.PetsciiVideoGui;
+import pl.dido.video.supercpu.SupercpuRenderer;
+import pl.dido.video.supercpu.SupercpuRenderer2;
 import pl.dido.video.supercpu.SupercpuVideoConfig;
 import pl.dido.video.supercpu.SupercpuVideoGui;
 import pl.dido.video.utils.GuiUtils;
@@ -78,14 +81,22 @@ public class RetroVID {
 		tabs = new VideoPanel[4];
 		
 		final Button btnLoad = new Button("Load file...");
-		tabs[0] = new PetsciiVideoGui(frame, new PetsciiVideoConfig());
-		tabs[1] = new SupercpuVideoGui(frame, new SupercpuVideoConfig());
-		tabs[2] = new AboutVideoGui();
+		
+		final PetsciiVideoConfig petsciiVideoConfig = new PetsciiVideoConfig();
+		tabs[0] = new PetsciiVideoGui(frame, new PetsciiRenderer(petsciiVideoConfig.petsciiConfig), petsciiVideoConfig);
+		
+		final SupercpuVideoConfig supercpuVideoConfig1 = new SupercpuVideoConfig();
+		tabs[1] = new SupercpuVideoGui(frame, new SupercpuRenderer(supercpuVideoConfig1.petsciiConfig), supercpuVideoConfig1);
+		
+		final SupercpuVideoConfig supercpuVideoConfig2 = new SupercpuVideoConfig();
+		tabs[2] = new SupercpuVideoGui(frame, new SupercpuRenderer2(supercpuVideoConfig2.petsciiConfig), supercpuVideoConfig2);
+		tabs[3] = new AboutVideoGui();
 		
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		tabbedPane.addTab("C64 PETSCII", null, tabs[0].getTab(), null);
-		tabbedPane.addTab("Super CPU CHARSET", null, tabs[1].getTab(), null);
-		tabbedPane.addTab("About", null, tabs[2].getTab(), null);
+		tabbedPane.addTab("SuperCPU CHARSET", null, tabs[1].getTab(), null);
+		tabbedPane.addTab("SuperCPU 2xCHARSET", null, tabs[2].getTab(), null);
+		tabbedPane.addTab("About", null, tabs[3].getTab(), null);
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent changeEvent) {
@@ -118,7 +129,7 @@ public class RetroVID {
 						grabber.start();
 
 						default_path = config.selectedFile.getAbsolutePath();
-						config.frameRate = (int) grabber.getFrameRate();
+						config.frameRate = (int) Math.round(grabber.getFrameRate());
 
 						final int end = grabber.getLengthInFrames() / config.frameRate;
 						final int mid = end / 2;

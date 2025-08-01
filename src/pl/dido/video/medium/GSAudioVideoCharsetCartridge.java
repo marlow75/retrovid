@@ -8,18 +8,15 @@ import pl.dido.video.compression.Compression;
 
 public class GSAudioVideoCharsetCartridge extends GSAudioVideoCartridge {
 	
-	protected byte charset[];
 	protected int charsetMark;
 
 	public GSAudioVideoCharsetCartridge(final Compression compression, final byte charset[]) throws IOException {
-		super(compression);
-		
-		this.charset = charset;
-		saveCharset();
+		super(compression);	
+		saveCharset(charset);
 	}
 	
-	public void saveCharset() {
-		mediumStream.fill(charsetMark, charset);	
+	public void saveCharset(final byte charset[]) {
+		mediumStream.fill(charsetMark, charset);
 	}
 	
 	@Override

@@ -1,6 +1,5 @@
 package pl.dido.video.medium;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,12 +8,10 @@ import java.util.Arrays;
 import pl.dido.video.compression.Compression;
 
 public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedium {
-
-	//private Logger log = Logger.getLogger(GSAudioVideoCartridge.class.getCanonicalName());
-	private final int AUDIO_FRAME_LENGTH = 184; // bytes per audio frame 4,41kHz - 4-bits
-
-	protected ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
+	private final int AUDIO_FRAME_LENGTH = 230; // bytes per audio frame 5512 Hz - 4-bits
 	protected ArrayList<Integer> audioFrames = new ArrayList<Integer>();
+	
+	protected ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
 
 	public GSAudioVideoCartridge(final Compression compression) throws IOException {
 		super(compression);
@@ -22,9 +19,9 @@ public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedi
 	}
 
 	@Override
-	public void writeVideoStream(final BufferedOutputStream prg) throws IOException {	
+	public void writeVideoStream(final String fileName) {	
 		updateAudio(); // fill audio buffers for every frame
-		super.writeVideoStream(prg);
+		super.writeVideoStream(fileName);
 	}
 
 	protected void updateAudio() {
@@ -40,6 +37,7 @@ public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedi
 		}
 	}
 
+	@Override
 	protected int reserveSpaceForAudio() {
 		final int mark = mediumStream.size();
 		for (int i = 0; i < AUDIO_FRAME_LENGTH; i++)

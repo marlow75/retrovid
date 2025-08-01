@@ -13,7 +13,7 @@ public class SupercpuRenderer extends PetsciiRenderer {
 	public void setNeural(final Network neural) {
 		this.neural = neural;
 	}
-
+	
 	public void setupPalette() {
 		super.setupPalette();
 	}

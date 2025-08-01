@@ -6,8 +6,9 @@ Videos with 24 frames per seconds are recommended. C64 timings are very tight, a
 
 ## Versions
 
-* 1.3 - Reworked ML media player, better and faster neural matcher, added neural denoiser, downsample with dithering (TPDF)
-* 1.2 - NN reworked - slow but produces better output
+* 1.4 - New mode with 2 regenerated charsets, new edge filter, reworked sound grabbing
+* 1.3 - Reworked ML media player, better and faster neural matcher, added neural denoiser, downsample with dithering (TPDF).
+* 1.2 - NN reworked - slow but produces better output.
 * 1.1 - Improved palette & color handling.
 * 1.0 - All charset characters are made by neural net, minor changes.
 * 0.1 - C64 PETSCII and CHARSET Super CPU supported.
@@ -22,7 +23,7 @@ Java users can run java builder with <b>mvn clean package</b> command. Maven bui
 
 Just type <b>java -jar retropic.jar</b> and do not close console window.
 
-CRT directory contains cartridge examples
+CRT directory contains cartridge examples, 512kb clips
 
 Credits to https://github.com/danielkleebinder - RetroVID uses new neural network approach with softmax to speed up learing (multithreaded).
 
@@ -41,10 +42,9 @@ Compression mode
 - Code and color - all changes are recorded, screen codes and colors
 - Codes - only changed screen codes and theirs colors are recorded
 
-- lowpass treshold - low pass filter reduces details, you set how much details you want to remove
+- lowpass - low pass filter reduces details, you set how much details you want to remove
+- edge - edge detection filter, increace details, more details shorter movie
 - denoising filter - simple autoencoder noise filter - reconstructs characters from 8x8 bitmap (experimental)
-
-Character matcher is pretty nite and coupled with lowpass filter is more than enought.
 
 Contrast processing
 
@@ -61,16 +61,10 @@ Medium
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minuts long
 - CRT audio - Game System C64 cartridge with 4,41 kHz digitized sound with simple low band filter 2,205 kHz cutoff
  
-Compression mode
+same conversion options.
 
-- Code and color - all changes are recorded, screen codes and colors
-- Codes - only changed screen codes and theirs colors are recorded
+![Super CPU 2xCharset](superCPU2.png)
 
+Extra charset added. Same algorithm as Super CPU Movie with key frames are divided into 8x8 blocks which feads net. Extra smoothness costs shorter video.
 
-- Code and color - all changes are recorded, screen codes and colors
-- Codes - only changed screen codes and theirs colors are recorded
-
-- lowpass treshold - low pass filter reduces details, you set how much details you want to remove
-- denoising filter - simple autoencoder noise filter - reconstructs characters from 8x8 bitmap (experimental)
-
-Character matcher is pretty nite and coupled with lowpass filter is more than enought.
+same conversion options.
