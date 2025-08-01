@@ -42,6 +42,13 @@ Compression mode
 - Code and color - all changes are recorded, screen codes and colors
 - Codes - only changed screen codes and theirs colors are recorded
 
+Sound options
+
+- lowpass filter - simple filter with 5,512 kHz cut off
+- TPDF - triangle propability function used by dithering sound downsampling, unchecked means rectangle function.
+
+Video filters
+
 - lowpass - low pass filter reduces details, you set how much details you want to remove
 - edge - edge detection filter, increace details, more details shorter movie
 - denoising filter - simple autoencoder noise filter - reconstructs characters from 8x8 bitmap (experimental)
