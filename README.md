@@ -26,7 +26,7 @@ CRT directory contains cartridge examples, 512kb clips
 
 Credits to https://github.com/danielkleebinder - RetroVID uses new neural network approach with softmax to speed up learing (multithreaded).
 
-## Usage
+## C64
 
 ![C64 Petscii](c64.png)
 
@@ -58,6 +58,8 @@ Contrast processing
 - HE - color histogram equalizer (global)
 - CLAHE - clipped adaptive color histogram equalizer (local) with sharpen level 
 
+## Super CPU - redefined charset
+
 ![Super CPU Charset](superCPU.png)
 
 New method with neural net learns new charset definitions. Movie key frames are divided into 8x8 blocks which feads net. Smoother pictures but takes some time. You can try to run cartridges on C64. Some movies, with slow action will work nicely. 
@@ -68,6 +70,8 @@ Medium
 - CRT audio - Game System C64 cartridge with 5,512 kHz digitized sound with simple low band filter cutoff
  
 same conversion options.
+
+## Super CPU - 2 redefined charset simultaneously
 
 ![Super CPU 2xCharset](superCPU2.png)
 
