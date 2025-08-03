@@ -20,14 +20,13 @@ Videos with 24 frames per seconds are recommended. C64 timings are very tight, a
 * download libs directory and put JAVACV library there, without JAVACV CONVERTER WON'T WORK !!!
 
 Java users can run java builder with <b>mvn clean package</b> command. Maven builder is required to do that. Running from console can give you some hints and additional info about errors, missing libs, movie parameters etc.
-
 Just type <b>java -jar retropic.jar</b> and do not close console window.
 
 CRT directory contains cartridge examples, 512kb clips
 
 Credits to https://github.com/danielkleebinder - RetroVID uses new neural network approach with softmax to speed up learing (multithreaded).
 
-## Usage
+## C64
 
 ![C64 Petscii](c64.png)
 
@@ -35,12 +34,19 @@ Medium
 
 - PRG - C64 program, simply type RUN command in BASIC
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minutes long
-- CRT audio - Game System C64 cartridge with 4,41 kHz digitized sound. Playback can by jazzy, fast scenes requires more CPU power.
+- CRT audio - Game System C64 cartridge with 5,512 kHz digitized sound. Playback can by jazzy, fast scenes requires more CPU power.
  
 Compression mode
 
 - Code and color - all changes are recorded, screen codes and colors
 - Codes - only changed screen codes and theirs colors are recorded
+
+Sound options
+
+- lowpass filter - simple filter with 5,512 kHz cutoff
+- TPDF - triangle propability function used by dithering sound downsampling, unchecked means rectangle function.
+
+Video filters
 
 - lowpass - low pass filter reduces details, you set how much details you want to remove
 - edge - edge detection filter, increace details, more details shorter movie
@@ -52,6 +58,8 @@ Contrast processing
 - HE - color histogram equalizer (global)
 - CLAHE - clipped adaptive color histogram equalizer (local) with sharpen level 
 
+## Super CPU - redefined charset
+
 ![Super CPU Charset](superCPU.png)
 
 New method with neural net learns new charset definitions. Movie key frames are divided into 8x8 blocks which feads net. Smoother pictures but takes some time. You can try to run cartridges on C64. Some movies, with slow action will work nicely. 
@@ -59,9 +67,11 @@ New method with neural net learns new charset definitions. Movie key frames are 
 Medium
 
 - CRT - Game System C64 cartridge capable of holding 512 kB, clips can be 2 minuts long
-- CRT audio - Game System C64 cartridge with 4,41 kHz digitized sound with simple low band filter 2,205 kHz cutoff
+- CRT audio - Game System C64 cartridge with 5,512 kHz digitized sound with simple low band filter cutoff
  
 same conversion options.
+
+## Super CPU - 2 redefined charset simultaneously
 
 ![Super CPU 2xCharset](superCPU2.png)
 
