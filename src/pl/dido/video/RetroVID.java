@@ -83,13 +83,13 @@ public class RetroVID {
 		final Button btnLoad = new Button("Load file...");
 		
 		final PetsciiVideoConfig petsciiVideoConfig = new PetsciiVideoConfig();
-		tabs[0] = new PetsciiVideoGui(frame, new PetsciiRenderer(petsciiVideoConfig.petsciiConfig), petsciiVideoConfig);
+		tabs[0] = new PetsciiVideoGui(frame, new PetsciiRenderer(petsciiVideoConfig.config), petsciiVideoConfig);
 		
 		final SupercpuVideoConfig supercpuVideoConfig1 = new SupercpuVideoConfig();
-		tabs[1] = new SupercpuVideoGui(frame, new SupercpuRenderer(supercpuVideoConfig1.petsciiConfig), supercpuVideoConfig1);
+		tabs[1] = new SupercpuVideoGui(frame, new SupercpuRenderer(supercpuVideoConfig1.config), supercpuVideoConfig1);
 		
 		final SupercpuVideoConfig supercpuVideoConfig2 = new SupercpuVideoConfig();
-		tabs[2] = new SupercpuVideoGui(frame, new SupercpuRenderer2(supercpuVideoConfig2.petsciiConfig), supercpuVideoConfig2);
+		tabs[2] = new SupercpuVideoGui(frame, new SupercpuRenderer2(supercpuVideoConfig2.config), supercpuVideoConfig2);
 		tabs[3] = new AboutVideoGui();
 		
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
@@ -129,21 +129,21 @@ public class RetroVID {
 						grabber.start();
 
 						default_path = config.selectedFile.getAbsolutePath();
-						config.frameRate = (int) Math.round(grabber.getFrameRate());
+						config.frameRate = grabber.getFrameRate();
 
-						final int end = grabber.getLengthInFrames() / config.frameRate;
-						final int mid = end / 2;
+						final long end = Math.round(grabber.getLengthInFrames() / config.frameRate);
+						final long mid = end / 2;
 
 						final Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 						labelTable.put(0, new JLabel("0"));
-						labelTable.put(mid, new JLabel(Integer.toString(mid) + "s"));
-						labelTable.put(end, new JLabel(Integer.toString(end) + "s"));
+						labelTable.put((int)mid, new JLabel(Long.toString(mid) + "s"));
+						labelTable.put((int)end, new JLabel(Long.toString(end) + "s"));
 
 						config.startVideoFrame = 0;
 
 						tab.enablePlay(true);
 						tab.enableRecord(true);
-						tab.setSlider(end, labelTable);
+						tab.setSlider((int)end, labelTable);
 					} catch (final Exception ex) {
 						ex.printStackTrace();
 					}

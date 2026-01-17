@@ -10,8 +10,8 @@ public class GSAudioVideoCharsetCartridge extends GSAudioVideoCartridge {
 	
 	protected int charsetMark;
 
-	public GSAudioVideoCharsetCartridge(final Compression compression, final byte charset[]) throws IOException {
-		super(compression);	
+	public GSAudioVideoCharsetCartridge(final String mediumName, final Compression compression, final byte charset[]) throws IOException {
+		super(mediumName, compression);	
 		saveCharset(charset);
 	}
 	
@@ -20,7 +20,7 @@ public class GSAudioVideoCharsetCartridge extends GSAudioVideoCartridge {
 	}
 	
 	@Override
-	public int savePlayer() throws IOException {
+	public int addPlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 

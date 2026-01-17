@@ -14,34 +14,34 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import pl.dido.image.petscii.PetsciiConfig;
 import pl.dido.image.utils.Config;
 import pl.dido.image.utils.Config.FILTER;
-import pl.dido.video.petscii.PetsciiVideoConfig;
-import pl.dido.video.petscii.PetsciiVideoConfig.COMPRESSION;
-import pl.dido.video.utils.VideoConfig.PDF;
+import pl.dido.video.utils.VideoConfig.COMPRESSION;
+import pl.dido.video.utils.VideoConfig.DITHERING_PDF;
+import pl.dido.video.utils.VideoConfig.SOUND_NORMALIZATION;
 
 public class GuiUtils {
 
 	public final static Font std = new Font("Tahoma", Font.PLAIN, 12);
+	public final static Font mini = new Font("Tahoma", Font.BOLD, 8);
 	public final static Font bold = new Font("Tahoma", Font.BOLD, 10);
 	
-	public static final void addFilterControls(final JPanel panel, final PetsciiConfig petsciiConfig) {
+	public static final void addVideoFilterControls(final JPanel panel, final Config config) {
 		final JLabel lblVideoLabel = new JLabel("Video filters:");
 		lblVideoLabel.setFont(GuiUtils.bold);
-		lblVideoLabel.setBounds(20, 130, 169, 14);
+		lblVideoLabel.setBounds(20, 150, 169, 14);
 		panel.add(lblVideoLabel);
 		
 		final JCheckBox chkLowpassFilterButton = new JCheckBox("lowpass");
 		chkLowpassFilterButton.setToolTipText("Apply lowpass filter (blur)");
 		chkLowpassFilterButton.setFont(GuiUtils.std);
-		chkLowpassFilterButton.setBounds(46, 150, 80, 23);
-		chkLowpassFilterButton.setSelected(petsciiConfig.filter == FILTER.LOWPASS);
+		chkLowpassFilterButton.setBounds(46, 170, 80, 23);
+		chkLowpassFilterButton.setSelected(config.filter == FILTER.LOWPASS);
 		chkLowpassFilterButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
 				final JCheckBox source = (JCheckBox) e.getSource();
 				if (source.isSelected())
-					petsciiConfig.filter = FILTER.LOWPASS;
+					config.filter = FILTER.LOWPASS;
 			}
 		});
 
@@ -50,21 +50,21 @@ public class GuiUtils {
 		final JCheckBox chkEdgeFilterButton = new JCheckBox("edge");
 		chkEdgeFilterButton.setToolTipText("Edge filter, edges would be more visible");
 		chkEdgeFilterButton.setFont(GuiUtils.std);
-		chkEdgeFilterButton.setBounds(150, 150, 80, 23);
-		chkEdgeFilterButton.setSelected(petsciiConfig.filter == FILTER.EDGES_BLEND);
+		chkEdgeFilterButton.setBounds(150, 170, 80, 23);
+		chkEdgeFilterButton.setSelected(config.filter == FILTER.EDGES_BLEND);
 		chkEdgeFilterButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
 				final JCheckBox source = (JCheckBox) e.getSource();
 				if (source.isSelected())
-					petsciiConfig.filter = FILTER.EDGES_BLEND;
+					config.filter = FILTER.EDGES_BLEND;
 			}
 		});
 		
 		panel.add(chkEdgeFilterButton);
 		
-		final JSlider sldDetect = new JSlider(JSlider.HORIZONTAL, 0, 4, (int) petsciiConfig.lowpass_gain);
-		sldDetect.setBounds(40, 186, 100, 35);
-		sldDetect.setFont(GuiUtils.std);
+		final JSlider sldDetect = new JSlider(JSlider.HORIZONTAL, 0, 4, (int) config.lowpass_gain);
+		sldDetect.setBounds(40, 196, 100, 30);
+		sldDetect.setFont(GuiUtils.mini);
 		sldDetect.addChangeListener(new ChangeListener() {
 			public void stateChanged(final ChangeEvent e) {
 				final JSlider source = (JSlider) e.getSource();
@@ -72,7 +72,7 @@ public class GuiUtils {
 				if (!source.getValueIsAdjusting()) {
 					final int value = source.getValue();
 					if (value != 0)
-						petsciiConfig.lowpass_gain = value;
+						config.lowpass_gain = value;
 				}
 			}
 		});
@@ -85,18 +85,18 @@ public class GuiUtils {
 		chckbxDenoiseCheckBox.setToolTipText("Neural denoise filter (simple autoencoder)");
 		chckbxDenoiseCheckBox.setFont(GuiUtils.std);
 		chckbxDenoiseCheckBox.setBounds(150, 196, 150, 20);
-		chckbxDenoiseCheckBox.setSelected(petsciiConfig.denoise);
+		chckbxDenoiseCheckBox.setSelected(config.denoise);
 
 		chckbxDenoiseCheckBox.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
-				petsciiConfig.denoise = !petsciiConfig.denoise;
+				config.denoise = !config.denoise;
 			}
 		});
 
 		panel.add(chckbxDenoiseCheckBox);
 	}
 	
-	public static final void addCompressionSoundControls(final JPanel panel, final PetsciiVideoConfig config) {
+	public static final void addCompressionSoundControls(final JPanel panel, final VideoConfig config) {
 		final JLabel lblCompLabel = new JLabel("Compression mode:");
 		lblCompLabel.setFont(GuiUtils.bold);
 		lblCompLabel.setBounds(20, 60, 169, 14);
@@ -149,21 +149,40 @@ public class GuiUtils {
 
 		panel.add(chkFilterButton);
 
-		final JCheckBox chkTPDFButton = new JCheckBox("TPDF");
-		chkTPDFButton.setToolTipText("Dithering triangle propability distribution function enabler");
+		final JCheckBox chkTPDFButton = new JCheckBox("TPDF/RPDF");
+		chkTPDFButton.setToolTipText("Triangle propability distribution function (ON)");
 		chkTPDFButton.setFont(GuiUtils.std);
-		chkTPDFButton.setBounds(200, 100, 150, 23);
-		chkTPDFButton.setSelected(config.ditherPDF == PDF.TPDF);
+		chkTPDFButton.setBounds(200, 100, 100, 23);
+		chkTPDFButton.setSelected(config.ditherPDF == DITHERING_PDF.TPDF);
 		chkTPDFButton.addActionListener(new ActionListener() {
 			public void actionPerformed(final ActionEvent e) {
 				switch (config.ditherPDF) {
 				case TPDF:
-					config.ditherPDF = PDF.WHITE_NOISE;
+					config.ditherPDF = DITHERING_PDF.WHITE_NOISE;
 					break;
 				default:
-					config.ditherPDF = PDF.TPDF;
+					config.ditherPDF = DITHERING_PDF.TPDF;
 					break;
-				
+				}
+			}
+		});
+
+		panel.add(chkTPDFButton);
+		
+		final JCheckBox chkNormalizationButton = new JCheckBox("ANorm");
+		chkNormalizationButton.setToolTipText("Sound normalization, try both options");
+		chkNormalizationButton.setFont(GuiUtils.std);
+		chkNormalizationButton.setBounds(200, 120, 50, 23);
+		chkNormalizationButton.setSelected(config.ditherPDF == DITHERING_PDF.TPDF);
+		chkNormalizationButton.addActionListener(new ActionListener() {
+			public void actionPerformed(final ActionEvent e) {
+				switch (config.soundNormalization) {
+				case AGRESSIVE:
+					config.soundNormalization = SOUND_NORMALIZATION.AGRESSIVE;
+					break;
+				default:
+					config.soundNormalization = SOUND_NORMALIZATION.LIGHT;
+					break;
 				}
 			}
 		});
@@ -211,7 +230,7 @@ public class GuiUtils {
 		final JRadioButton rdbtnNoContrastExpanderButton = new JRadioButton("none");
 		rdbtnNoContrastExpanderButton.setToolTipText("No contrast processing");
 		rdbtnNoContrastExpanderButton.setFont(std);
-		rdbtnNoContrastExpanderButton.setBounds(46, 243, 50, 20);
+		rdbtnNoContrastExpanderButton.setBounds(46, 243, 60, 20);
 		rdbtnNoContrastExpanderButton.setSelected(config.high_contrast == Config.HIGH_CONTRAST.NONE);
 
 		rdbtnNoContrastExpanderButton.addActionListener(new ActionListener() {

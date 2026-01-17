@@ -1,42 +1,6 @@
 package pl.dido.video.compression;
 
-import java.util.Arrays;
-
-public class Compression {
-	// o - old screen, n - old nibble
-	public int[] compress(final int o[], final int n[], final int screen[], final int nibble[]) {
-		final int out[] = new int[2000];
-
-		int index = 0;
-		int address = 0;
-
-		for (int i = 0, j = 0; i < o.length; i++) {
-			if (o[i] != screen[i]) {
-				out[index++] = j;
-				out[index++] = screen[i];
-
-				address += j;
-				j = 0;
-			}
-
-			if (j == 255) {
-				out[index++] = 255;
-				out[index++] = screen[i];
-
-				address += j;
-				j = 0;
-			}
-
-			j++;
-		}
-
-		if (address < 999) {
-			out[index++] = (999 - address);
-			out[index++] = screen[999];
-		}
-
-		return Arrays.copyOf(out, index);
-	}
+public abstract class Compression {
 
 	public void decompress(final int s[], final int c[], final int changes[]) {
 		int index = 0;
@@ -46,12 +10,12 @@ public class Compression {
 		}
 	}
 
-	public boolean checkSize(final int changes[]) {
-		int size = 0;
+	public boolean checkSize(final int changes[], final int size) {
+		int s = 0;
 		for (int i = 0; i < changes.length; i += 2)
-			size += changes[i];
+			s += changes[i];
 
-		return size == 999;
+		return size == s;
 	}
 
 	public int[] packNibble(final int[] nibble) {
@@ -62,4 +26,6 @@ public class Compression {
 
 		return result;
 	}
+
+	public abstract int[] compress(int[] oldScreen, int[] oldNibble, int[] screen, int[] nibble);
 }

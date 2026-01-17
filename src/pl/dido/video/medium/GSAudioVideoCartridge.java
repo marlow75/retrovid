@@ -7,14 +7,14 @@ import java.util.Arrays;
 
 import pl.dido.video.compression.Compression;
 
-public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedium {
+public class GSAudioVideoCartridge extends GSVideoCartridge implements AudioMedium, Medium {
 	private final int AUDIO_FRAME_LENGTH = 230; // bytes per audio frame 5512 Hz - 4-bits
 	protected ArrayList<Integer> audioFrames = new ArrayList<Integer>();
 	
 	protected ByteArrayOutputStream audioStream = new ByteArrayOutputStream();
 
-	public GSAudioVideoCartridge(final Compression compression) throws IOException {
-		super(compression);
+	public GSAudioVideoCartridge(final String mediumName, final Compression compression) throws IOException {
+		super(mediumName, compression);
 		audioFrames = new ArrayList<Integer>();
 	}
 

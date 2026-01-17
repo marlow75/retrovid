@@ -18,7 +18,7 @@ import pl.dido.video.utils.VideoGui;
 public class SupercpuVideoGui2 extends VideoGui {
 
 	public SupercpuVideoGui2(final JFrame frame, final SupercpuVideoConfig config) {
-		super(frame, new SupercpuRenderer2(config.petsciiConfig), config);
+		super(frame, new SupercpuRenderer2(config.config), config);
 	}
 
 	@Override
@@ -63,8 +63,8 @@ public class SupercpuVideoGui2 extends VideoGui {
 		groupCompression.add(rdbtnCRTAudioButton);
 		
 		GuiUtils.addCompressionSoundControls(panel, petsciiVideoConfig);
-		GuiUtils.addFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.petsciiConfig);
-		GuiUtils.addContrastControls(panel, petsciiVideoConfig.petsciiConfig);
+		GuiUtils.addVideoFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.config);
+		GuiUtils.addContrastControls(panel, petsciiVideoConfig.config);
 
 		return panel;
 	}

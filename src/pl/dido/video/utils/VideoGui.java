@@ -104,7 +104,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 				final JSlider source = (JSlider) e.getSource();
 
 				if (!source.getValueIsAdjusting()) {
-					config.startVideoFrame = source.getValue() * config.frameRate;
+					config.startVideoFrame = (int) Math.round(source.getValue() * config.frameRate);
 					displaySingleFrame();
 				}
 			}
@@ -174,7 +174,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 				grabber.start();
 				grabber.setFrameNumber(config.startVideoFrame);
 				
-				frame2Ascii(renderer);
+				convertFrame(renderer);
 			} catch (final Exception ex) {
 				ex.printStackTrace();
 				JOptionPane.showMessageDialog(null, "ERROR", "Can't display single fragment !!!",
@@ -197,7 +197,7 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 			grabber.setFrameNumber(start);
 			
 			for (int i = start; i < end; i++)
-				frame2Ascii(renderer); // slide show
+				convertFrame(renderer); // slide show
 
 		} catch (final Exception ex) {
 			JOptionPane.showMessageDialog(null, "ERROR", "Can't play fragment !!!", JOptionPane.ERROR_MESSAGE);
@@ -230,11 +230,11 @@ public abstract class VideoGui implements ActionListener, PropertyChangeListener
 		return frame;
 	}
 	
-	private void frame2Ascii(final AbstractRenderer renderer) {
+	private void convertFrame(final AbstractRenderer renderer) {
 		final Frame frame = getFrame();
 
 		try (final Java2DFrameConverter conv = new Java2DFrameConverter()) {
-			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.petsciiConfig.getScreenWidth(), config.petsciiConfig.getScreenHeight()));
+			renderer.setImage(Gfx.scaleWithStretching(conv.convert(frame), config.config.getScreenWidth(), config.config.getScreenHeight()));
 			renderer.imageProcess();
 
 			movie.setImage(Gfx.scaleWithStretching(renderer.getImage(), 320, 200));

@@ -7,7 +7,7 @@ import pl.dido.image.utils.Utils;
 import pl.dido.video.compression.Compression;
 import pl.dido.video.utils.MarkableByteArrayOutputStream;
 
-public abstract class AbstractVideoMedium implements VideoMedium {
+public abstract class AbstractVideoMedium implements VideoMedium, Medium {
 	protected final MarkableByteArrayOutputStream mediumStream;
 
 	protected final Compression compression;
@@ -19,20 +19,20 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 	protected int grabbedFrames;
 	protected String fileName;
 
-	public AbstractVideoMedium(final Compression compression) throws IOException {
+	public AbstractVideoMedium(final String fileName, final Compression compression) throws IOException {
 		this.compression = compression;
+		this.fileName = fileName;
 
 		mediumStream = new MarkableByteArrayOutputStream(256 * 1024);
-		mediumSize += savePlayer();
+		mediumSize += addPlayer();
 
 		// update stream address
 		final int address = mediumSize + getStreamBase();
 		mediumStream.setShortAtMarkedPosition(streamAddressMark, address);
-
 		mediumStream.flush();
 	}
 
-	public int savePlayer() throws IOException {
+	public int addPlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 
@@ -57,9 +57,7 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		return sum;
 	}
 
-	public void createMedium(final String fileName) {
-		this.fileName = fileName;
-		
+	public void createMedium() {
 		// update frames counter
 		mediumStream.setByteAtMarkedPosition(framesCounterMark, (byte) (grabbedFrames - 1));
 		writeVideoStream(fileName);
@@ -100,12 +98,12 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 		if (mediumSize + len > getMaxSize())
 			return false;
 
-		if (!compression.checkSize(compressedScreen))
+		if (!compression.checkSize(compressedScreen, screen.length - 1))
 			throw new RuntimeException("Invalid compression");
 
 		// check & verify compression
 		compression.decompress(oldScreen, oldNibble, compressedScreen);
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < screen.length; i++)
 			if (oldScreen[i] != screen[i])
 				throw new RuntimeException("Invalid compression");
 
@@ -122,18 +120,14 @@ public abstract class AbstractVideoMedium implements VideoMedium {
 	}
 
 	protected abstract int getFrameSoundSize();
-
 	protected abstract int writeFrameSound();
 
 	protected abstract int reserveSpaceForFramesCounter();
-
 	protected abstract int reserveSpaceForAudio();
 
 	protected abstract String getPlayerFileName();
-
 	protected abstract int getStreamBase();
 
 	protected abstract String getMediumName(final String fileName);
-
 	protected abstract void writeVideoStream(final String fileName);
 }

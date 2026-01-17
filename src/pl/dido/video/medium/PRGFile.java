@@ -9,8 +9,8 @@ import pl.dido.video.compression.Compression;
 
 public class PRGFile extends AbstractVideoMedium {
 
-	public PRGFile(final Compression compression) throws IOException {
-		super(compression);
+	public PRGFile(final String mediumName, final Compression compression) throws IOException {
+		super(mediumName, compression);
 	}
 
 	@Override

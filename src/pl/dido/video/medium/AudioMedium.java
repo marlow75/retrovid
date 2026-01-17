@@ -1,6 +1,6 @@
 package pl.dido.video.medium;
 
-public interface AudioMedium extends Medium {
+public interface AudioMedium {
 
 	void saveAudioBuffer(byte[] audio);
 }

@@ -8,8 +8,8 @@ import pl.dido.video.compression.Compression;
 
 public class GSAudioVideo2CharsetCartridge extends GSAudioVideoCharsetCartridge {
 
-	public GSAudioVideo2CharsetCartridge(final Compression compression, final byte charset1[], final byte charset2[]) throws IOException {
-		super(compression, charset1);		
+	public GSAudioVideo2CharsetCartridge(final String mediumName, final Compression compression, final byte charset1[], final byte charset2[]) throws IOException {
+		super(mediumName, compression, charset1);		
 		save2Charset(charset2);
 	}
 	
@@ -18,7 +18,7 @@ public class GSAudioVideo2CharsetCartridge extends GSAudioVideoCharsetCartridge 
 	}
 	
 	@Override
-	public int savePlayer() throws IOException {
+	public int addPlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 

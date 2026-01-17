@@ -37,48 +37,56 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 		renderer = getRenderer();
 	}
 
-	protected abstract AbstractRenderer getRenderer();
-
 	public int convert() {
 		setProgress(0);
 
 		try (final FFmpegFrameGrabber frameGrabber = new FFmpegFrameGrabber(config.selectedFile)) {
 			final String dir = config.selectedFile.getParent() + File.separator + "MOVIES";
-			String fileName = config.selectedFile.getName();
-
-			fileName = dir + File.separator + fileName.substring(0, fileName.length() > 8 ? 8 : fileName.length());
+			String fileName = config.selectedFile.getName() + config.startVideoFrame;
+			
+			final int frameLength = String.valueOf(config.startVideoFrame).length();
+			if (frameLength < 8) {
+				fileName = fileName.substring(0, 8 - frameLength) + config.startVideoFrame;
+			} else {
+				fileName = String.valueOf(config.startVideoFrame);
+				fileName = fileName.substring(0, 8) + config.startVideoFrame;
+			}
+			
+			fileName = dir + File.separator + fileName;
+			
 			Utils.createDirectory(dir);
-
 			frameGrabber.start();
+			
 			frameGrabber.setFrameNumber(config.startVideoFrame);
-
-			final VideoMedium medium = (VideoMedium) getMedium();
-			final int grabbedFrames = grabVideo(fileName, frameGrabber, medium);
+			final Medium medium = getMedium(fileName);
+			
+			final int grabbedFrames = grabVideo(fileName, frameGrabber, (VideoMedium) medium);
 			frameGrabber.stop();
-
+			
 			if (medium instanceof AudioMedium) {
 				frameGrabber.start();
 				
-				final int startTime = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate());
-				final int stopTime = (int) (((config.startVideoFrame + grabbedFrames) * config.getSkipFrameRate()) / frameGrabber.getVideoFrameRate());
+				final int startTime = (int) (config.startVideoFrame / frameGrabber.getVideoFrameRate()); // in sec
+				final int stopTime = (int) (startTime + (grabbedFrames * config.getSkipFrameRate()) / frameGrabber.getVideoFrameRate()); // in sec
 				
 				final int startAudioFrame = (int) (startTime * frameGrabber.getAudioFrameRate());
-				final int stopAudioFrame = (int) (stopTime * frameGrabber.getAudioFrameRate());
 
 				frameGrabber.setAudioFrameNumber(startAudioFrame);
-				grabAudio(frameGrabber, medium, stopAudioFrame);
+				grabAudio(frameGrabber, (AudioMedium) medium, stopTime * 1_000_000);
 				
 				frameGrabber.stop();
 			}
 
 			log.info("Grabbed: " + grabbedFrames + " frames");
 
-			medium.createMedium(fileName + config.startVideoFrame);
+			medium.createMedium();
 			setProgress(100);
 		} catch (final IOException e) {
+			e.printStackTrace();
 			setProgress(100); // done
 			return IO_ERROR;
 		} catch (final Exception e) {
+			e.printStackTrace();
 			setProgress(100); // done
 			return ERROR;
 		}
@@ -96,9 +104,9 @@ public abstract class GrabberTask extends SwingWorker<Integer, Void> {
 		}
 	}
 
-	protected abstract void grabAudio(final FFmpegFrameGrabber frameGrabber, final VideoMedium medium, final int stopAudioFrame) throws Exception;
-	protected abstract int grabVideo(final String fileName, final FFmpegFrameGrabber frameGrabber,
-			final VideoMedium medium) throws Exception;
+	protected abstract void grabAudio(final FFmpegFrameGrabber frameGrabber, final AudioMedium medium, final long stopAudioTime) throws Exception;
+	protected abstract int grabVideo(final String fileName, final FFmpegFrameGrabber frameGrabber, final VideoMedium medium) throws Exception;
 
-	protected abstract Medium getMedium() throws IOException;
+	protected abstract Medium getMedium(final String mediumName) throws IOException;
+	protected abstract AbstractRenderer getRenderer();
 }

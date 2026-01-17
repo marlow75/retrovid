@@ -9,8 +9,8 @@ import pl.dido.video.compression.Compression;
 public class GSVideoCharsetCartridge extends GSVideoCartridge {
 	protected int charsetMark;
 
-	public GSVideoCharsetCartridge(final Compression compression, final byte[] charset) throws IOException {
-		super(compression);
+	public GSVideoCharsetCartridge(final String mediumName, final Compression compression, final byte[] charset) throws IOException {
+		super(mediumName, compression);
 		saveCharset(charset);
 	}
 
@@ -19,7 +19,7 @@ public class GSVideoCharsetCartridge extends GSVideoCartridge {
 	}
 	
 	@Override
-	public int savePlayer() throws IOException {
+	public int addPlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 

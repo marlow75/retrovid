@@ -64,8 +64,8 @@ public class SupercpuVideoGui extends VideoGui {
 		groupCompression.add(rdbtnCRTAudioButton);
 		
 		GuiUtils.addCompressionSoundControls(panel, petsciiVideoConfig);
-		GuiUtils.addFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.petsciiConfig);
-		GuiUtils.addContrastControls(panel, petsciiVideoConfig.petsciiConfig);
+		GuiUtils.addVideoFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.config);
+		GuiUtils.addContrastControls(panel, petsciiVideoConfig.config);
 		
 		return panel;
 	}

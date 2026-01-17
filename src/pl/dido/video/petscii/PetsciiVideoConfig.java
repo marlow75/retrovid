@@ -9,24 +9,20 @@ import pl.dido.video.utils.VideoConfig;
 
 public class PetsciiVideoConfig extends VideoConfig {
 	
-	public enum COMPRESSION { CODES_COLOR, CODES };
 	public enum MEDIUM_TYPE { CRT, CRT_SND, PRG };
 	
 	public MEDIUM_TYPE mediumType;
-	public COMPRESSION compression;
 
 	public File selectedFile;	
 	public int startFrame;
 	
 	public PetsciiVideoConfig() {
 		super(new PetsciiConfig());
-		
-		compression = COMPRESSION.CODES_COLOR;
 		mediumType = MEDIUM_TYPE.CRT;
 		
-		petsciiConfig.dither_alg = DITHERING.NONE;
-		petsciiConfig.pal_view = false;
+		config.dither_alg = DITHERING.NONE;
+		config.pal_view = false;
 		
-		petsciiConfig.filter = FILTER.EDGES_BLEND;
+		config.filter = FILTER.EDGES_BLEND;
 	}
 }

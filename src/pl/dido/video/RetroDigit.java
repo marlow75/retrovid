@@ -17,20 +17,13 @@ import pl.dido.video.utils.SoundUtils;
 
 public class RetroDigit {
 	
-	private static final int c64SampleRate = 5512;
-
 	public static void main(final String args[]) throws Exception {
-		boolean first = true;
-		
-		try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber("c:/temp/adele.mp4")) {
-
+		try (FFmpegFrameGrabber grabber = new FFmpegFrameGrabber("c:/temp/mak_cz3.mp3")) {
 			float s = 65536 / 16;
 			float d = 0, e = 0f, pd = 0;
 
-			int currentTime = 0;
 			final ByteArrayOutputStream bytes = new ByteArrayOutputStream(256 * 1024);
 
-			final int soundLeap = (int) (1f / c64SampleRate * 1_000_000);
 			grabber.start();
 			// just grab raw sound data
 			while (true) {
@@ -41,32 +34,19 @@ public class RetroDigit {
 
 				if (frame.type == Frame.Type.AUDIO) {
 					// check frame time
-					final long frameTime = frame.timestamp; // microseconds
-					final long timeDelta = frameTime - currentTime;
-
-					final int sampleRate = frame.sampleRate;
 					final ShortBuffer shortBuffer = (ShortBuffer) frame.samples[0];
 
 					shortBuffer.rewind();
-
 					final int bufLen = shortBuffer.capacity();
-					// frame duration in microseconds
-					final int frameLength = Math.round(bufLen / (1f * frame.audioChannels * sampleRate) * 1_000_000);
-
-					// to soon so play empty bytes
-					if (timeDelta > 0) {
-						final int mutes = timeDelta / soundLeap + Math.random() > 0.5f ? 1 : 0;
-						for (int i = 0; i < mutes; i++) {
-							bytes.write(0x0);
-							bytes.write(0x0);
-						}
-
-						currentTime += mutes * soundLeap;
-					}
 
 					int avg = 0;
 					while (shortBuffer.position() < bufLen) {
-						int data = (shortBuffer.get() + shortBuffer.get()) / 2;
+						int data = 0;
+						if (frame.audioChannels == 2)
+							data = (shortBuffer.get() + shortBuffer.get()) / 2;
+						else
+							data = shortBuffer.get();
+							
 						avg = SoundUtils.lowPass(avg, data);
 
 						data = avg & 0xffff;
@@ -76,19 +56,19 @@ public class RetroDigit {
 						bytes.write(lo);
 						bytes.write(hi);
 					}
-					
-					currentTime += frameLength;
 				}
 
 				frame.close();
 			}
 			
 			final byte byteData[] = bytes.toByteArray();
+			
 			final int byteLen = byteData.length;
 			final int bufLen = byteLen / 2;
 			
-			final short shortData[] = new short[bufLen];
+			short shortData[] = new short[bufLen];
 			int j = 0;
+			
 			for (int i = 0; i < byteLen; i += 2) {
 				final int lo = byteData[i + 0] & 0xff;
 				final int hi = byteData[i + 1] & 0xff;
@@ -96,45 +76,32 @@ public class RetroDigit {
 				shortData[j++] = (short) (hi * 256 + lo);
 			}
 			
-			SoundUtils.peekNormalization(shortData);
-			
-			float avg = 0;
+			shortData = SoundUtils.compressAndNormalize(shortData);
 			final ByteArrayOutputStream debug = new ByteArrayOutputStream(128 * 1024);
 			
 			// conversion
 			for (int i = 0; i < bufLen; i++) {
 				final short sample = shortData[i];
-				if (first) {
-					avg = sample;
-					first = false;
-
-					continue;
-				}
-
-				avg += sample;
-				if (i % 8 == 0) { // every AUDIO_SKIP bytes 44,1 kHz
-					avg /= 8;
 					
-					pd = d;
-					d = (float) (2 * SoundUtils.triangularDistribution(0, 0.5f, 1) - 1);
+				pd = d;
+				d = (float) (2 * SoundUtils.triangularDistribution(0, 0.5f, 1) - 1);
 
-					// scaling + dithering
-					final int scaled = (int) (avg / s);
-					final float result = scaled + d + 0.8f * e * (d - pd);
+				// scaling + dithering
+				final int scaled = (int) (sample / s);
+				final float result = scaled + d + 0.6f * e * (d - pd);
 
-					// downsampling
-					int p = (int) (result);
-					e = scaled - p;
-					
-					// saturation
-					p = p > 8 ? 8 : p < -7 ? -7 : p;
-					p += 8;
-					
-					debug.write(p * 16);
-				}
+				// downsampling
+				int p = (int) (result);
+				e = scaled - p;
+				
+				// saturation
+				p = p > 7 ? 7 : p < -8 ? -8 : p;
+				p += 8;
+				
+				debug.write(p * 16);
 			}
 
-			final AudioFormat format = new AudioFormat((float) 5512, 8, 1, false, true);
+			final AudioFormat format = new AudioFormat((float) 44100, 8, 1, false, true);
 			final byte buf[] = debug.toByteArray();
 
 			final ByteArrayInputStream bais = new ByteArrayInputStream(buf);

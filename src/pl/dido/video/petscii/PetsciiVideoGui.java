@@ -70,14 +70,14 @@ public class PetsciiVideoGui extends VideoGui {
 
 		panel.add(rdbtnCRTAudioButton);
 
-		final ButtonGroup groupCompression = new ButtonGroup();
-		groupCompression.add(rdbtnPRGButton);
-		groupCompression.add(rdbtnCRTVideoButton);
-		groupCompression.add(rdbtnCRTAudioButton);
+		final ButtonGroup groupMedium = new ButtonGroup();
+		groupMedium.add(rdbtnPRGButton);
+		groupMedium.add(rdbtnCRTVideoButton);
+		groupMedium.add(rdbtnCRTAudioButton);
 
 		GuiUtils.addCompressionSoundControls(panel, petsciiVideoConfig);
-		GuiUtils.addFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.petsciiConfig);
-		GuiUtils.addContrastControls(panel, petsciiVideoConfig.petsciiConfig);
+		GuiUtils.addVideoFilterControls(panel, (PetsciiConfig) petsciiVideoConfig.config);
+		GuiUtils.addContrastControls(panel, petsciiVideoConfig.config);
 		
 		return panel;
 	}

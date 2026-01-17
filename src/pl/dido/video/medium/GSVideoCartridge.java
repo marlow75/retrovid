@@ -12,14 +12,12 @@ import pl.dido.video.compression.Compression;
 public class GSVideoCartridge extends PRGFile {
 	protected final int BANK_SIZE = 8192;
 
-	public GSVideoCartridge(final Compression compression) throws IOException {
-		super(compression);
+	public GSVideoCartridge(final String mediumName, final Compression compression) throws IOException {
+		super(mediumName, compression);
 	}
 
 	@Override
-	public void createMedium(final String fileName) {
-		this.fileName = fileName; // update frames counter
-		
+	public void createMedium() {
 		mediumStream.setShortAtMarkedPosition(framesCounterMark, (short) (grabbedFrames - 1));
 		writeVideoStream(fileName);
 	}
@@ -29,10 +27,10 @@ public class GSVideoCartridge extends PRGFile {
 		final byte bytes[] = mediumStream.toByteArray();
 		final int dataLen = bytes.length;
 
-		BufferedOutputStream prg = null;
+		BufferedOutputStream crt = null;
 		try {
-			prg = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
-			prg.write(getHeader());
+			crt = new BufferedOutputStream(new FileOutputStream(new File(getMediumName(fileName))), 8192);
+			crt.write(getHeader());
 
 			int i = 0;
 			byte bank = 0;
@@ -40,21 +38,21 @@ public class GSVideoCartridge extends PRGFile {
 			for (i = 0; i < dataLen; i++) {
 				if (i % BANK_SIZE == 0)
 					// block size reached
-					prg.write(getChipHeader(bank++));
+					crt.write(getChipHeader(bank++));
 
-				prg.write(bytes[i]);
+				crt.write(bytes[i]);
 			}
 
 			while (i++ % BANK_SIZE != 0)
-				prg.write(-1);
+				crt.write(-1);
 
 		} catch (final IOException ex) {
-			System.out.println("Can't create PRG file !!!");
+			System.out.println("Can't create GS cartridge !!!");
 		} finally {
-			if (prg != null)
+			if (crt != null)
 				try {
-					prg.flush();
-					prg.close();
+					crt.flush();
+					crt.close();
 				} catch (final IOException e) {
 					e.printStackTrace();
 				}
@@ -62,7 +60,7 @@ public class GSVideoCartridge extends PRGFile {
 	}
 
 	@Override
-	public int savePlayer() throws IOException {
+	public int addPlayer() throws IOException {
 		int sum = 0, data;
 		BufferedInputStream in = null;
 

@@ -3,9 +3,8 @@ package pl.dido.video.compression;
 import java.util.Arrays;
 
 // compress only character changes with max 15 relative positions
-public class CodesCompression extends Compression {
+public class PETSCIICodesCompression extends Compression {
 	
-	@Override
 	public int[] compress(final int o[], final int n[], final int screen[], final int nibble[]) {
 		final int out[] = new int[2000];
 		int index = 0, address = 0;
@@ -56,12 +55,12 @@ public class CodesCompression extends Compression {
 	}
 
 	@Override
-	public boolean checkSize(final int changes[]) {
-		int size = 0;
+	public boolean checkSize(final int changes[], final int size) {
+		int s = 0;
 		for (int i = 0; i < changes.length; i += 2)
-			size += changes[i] & 0xf;
+			s += changes[i] & 0xf;
 
-		return size == 999;
+		return s == size;
 	}
 
 }
