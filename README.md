@@ -25,8 +25,6 @@ Just type <b>java -jar retropic.jar</b> and do not close console window.
 
 CRT directory contains cartridge examples, 512kb clips
 
-Credits to https://github.com/danielkleebinder - RetroVID uses new neural network approach with softmax to speed up learning (multithreaded).
-
 ## C64
 
 ![C64 Petscii](c64.png)
