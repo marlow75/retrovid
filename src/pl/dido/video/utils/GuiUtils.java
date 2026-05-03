@@ -26,12 +26,39 @@ public class GuiUtils {
 	public final static Font mini = new Font("Tahoma", Font.BOLD, 8);
 	public final static Font bold = new Font("Tahoma", Font.BOLD, 10);
 	
+	protected final static int position2level[] = new int[] {0, 4, 5, 6, 7, 8};
+	protected final static int level2position[] = new int[] {0, 0, 0, 1, 2, 3, 4, 5};
+
 	public static final void addVideoFilterControls(final JPanel panel, final Config config) {
 		final JLabel lblVideoLabel = new JLabel("Video filters:");
 		lblVideoLabel.setFont(GuiUtils.bold);
-		lblVideoLabel.setBounds(20, 150, 169, 14);
+		lblVideoLabel.setBounds(20, 130, 169, 14);
 		panel.add(lblVideoLabel);
+
+		final JSlider sldPoster = new JSlider(JSlider.HORIZONTAL, 0, 5, level2position[config.posterize_level]);
+		final JLabel posterLabel = new JLabel("poster:");
 		
+		posterLabel.setFont(GuiUtils.bold);
+		posterLabel.setBounds(46, 145, 50, 20);
+		panel.add(posterLabel);
+
+		sldPoster.setBounds(90, 145, 80, 30);
+		sldPoster.setFont(GuiUtils.mini);
+		sldPoster.addChangeListener(new ChangeListener() {
+			public void stateChanged(final ChangeEvent e) {
+				final JSlider source = (JSlider) e.getSource();
+
+				if (!source.getValueIsAdjusting()) {
+					final int position =  source.getValue();
+					config.posterize_level = position2level[position];
+				}
+			}
+		});
+
+		sldPoster.setMajorTickSpacing(1);
+		sldPoster.setPaintLabels(true);
+		panel.add(sldPoster);
+
 		final JCheckBox chkLowpassFilterButton = new JCheckBox("lowpass");
 		chkLowpassFilterButton.setToolTipText("Apply lowpass filter (blur)");
 		chkLowpassFilterButton.setFont(GuiUtils.std);
@@ -59,9 +86,9 @@ public class GuiUtils {
 					config.filter = FILTER.EDGES_BLEND;
 			}
 		});
-		
+
 		panel.add(chkEdgeFilterButton);
-		
+
 		final JSlider sldDetect = new JSlider(JSlider.HORIZONTAL, 0, 4, (int) config.lowpass_gain);
 		sldDetect.setBounds(40, 196, 100, 30);
 		sldDetect.setFont(GuiUtils.mini);
@@ -76,11 +103,11 @@ public class GuiUtils {
 				}
 			}
 		});
-		
+
 		sldDetect.setMajorTickSpacing(2);
 		sldDetect.setPaintLabels(true);
 		panel.add(sldDetect);
-		
+
 		final JCheckBox chckbxDenoiseCheckBox = new JCheckBox("denoising filter");
 		chckbxDenoiseCheckBox.setToolTipText("Neural denoise filter (simple autoencoder)");
 		chckbxDenoiseCheckBox.setFont(GuiUtils.std);
@@ -95,7 +122,7 @@ public class GuiUtils {
 
 		panel.add(chckbxDenoiseCheckBox);
 	}
-	
+
 	public static final void addCompressionSoundControls(final JPanel panel, final VideoConfig config) {
 		final JLabel lblCompLabel = new JLabel("Compression mode:");
 		lblCompLabel.setFont(GuiUtils.bold);
@@ -130,7 +157,7 @@ public class GuiUtils {
 		groupMedium.add(rdbtColorButton);
 		groupMedium.add(rdbtnCodesButton);
 		panel.add(rdbtnCodesButton);
-		
+
 		final JLabel lblSoundLabel = new JLabel("Sound options:");
 		lblSoundLabel.setFont(GuiUtils.bold);
 		lblSoundLabel.setBounds(174, 60, 169, 14);
@@ -168,7 +195,7 @@ public class GuiUtils {
 		});
 
 		panel.add(chkTPDFButton);
-		
+
 		final JCheckBox chkNormalizationButton = new JCheckBox("ANorm");
 		chkNormalizationButton.setToolTipText("Sound normalization, try both options");
 		chkNormalizationButton.setFont(GuiUtils.std);
@@ -189,20 +216,21 @@ public class GuiUtils {
 
 		panel.add(chkTPDFButton);
 	}
-		
+
 	public static final void addContrastControls(final JPanel panel, final Config config) {
 		final JLabel contrastLabel = new JLabel("Contrast processing:");
 		contrastLabel.setFont(bold);
 		contrastLabel.setBounds(20, 220, 300, 20);
 		panel.add(contrastLabel);
-		
+
 		final JLabel brightLabel = new JLabel("details");
 		brightLabel.setFont(bold);
 		brightLabel.setBounds(180, 265, 120, 20);
 		panel.add(brightLabel);
 
 		final JSlider sldBrightness = new JSlider(JSlider.HORIZONTAL, 1, 5, config.details);
-		sldBrightness.setEnabled(config.high_contrast == Config.HIGH_CONTRAST.SWAHE || config.high_contrast == Config.HIGH_CONTRAST.CLAHE);
+		sldBrightness.setEnabled(config.high_contrast == Config.HIGH_CONTRAST.SWAHE
+				|| config.high_contrast == Config.HIGH_CONTRAST.CLAHE);
 		sldBrightness.setFont(GuiUtils.std);
 		sldBrightness.setBounds(180, 285, 120, 35);
 		sldBrightness.addChangeListener(new ChangeListener() {
@@ -226,7 +254,7 @@ public class GuiUtils {
 		sldBrightness.setLabelTable(labelTable2);
 
 		panel.add(sldBrightness);
-		
+
 		final JRadioButton rdbtnNoContrastExpanderButton = new JRadioButton("none");
 		rdbtnNoContrastExpanderButton.setToolTipText("No contrast processing");
 		rdbtnNoContrastExpanderButton.setFont(std);
@@ -256,7 +284,7 @@ public class GuiUtils {
 		});
 
 		panel.add(rdbtnHEButton);
-		
+
 		final JRadioButton rdbtnCLAHEButton = new JRadioButton("CLAHE");
 		rdbtnCLAHEButton.setToolTipText("Clipped Adaptive Histogram Equalizer");
 		rdbtnCLAHEButton.setFont(std);
@@ -271,7 +299,7 @@ public class GuiUtils {
 		});
 
 		panel.add(rdbtnCLAHEButton);
-		
+
 		final ButtonGroup groupContrast = new ButtonGroup();
 		groupContrast.add(rdbtnNoContrastExpanderButton);
 		groupContrast.add(rdbtnHEButton);

@@ -6,6 +6,7 @@ Videos with 24 frames per second are recommended. C64 timings are very tight; an
 
 ## Versions
 
+* 1.6 - Major bug fixes, new poster filter
 * 1.5 - Audio completely reworked, compressor, normalizer with dithering produces decent sound
 * 1.4 - New mode with 2 regenerated charsets, new edge filter, reworked sound grabbing
 * 1.3 - Reworked ML media player, better and faster neural matcher, added neural denoiser, downsample with dithering (TPDF).

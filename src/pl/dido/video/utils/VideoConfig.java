@@ -32,6 +32,7 @@ public class VideoConfig {
 	
 	public VideoConfig(final Config config) {
 		this.config = config;
+		this.config.posterize_level = 4;
 	}
 
 	public int getSkipFrameRate() {
